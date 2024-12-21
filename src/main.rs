@@ -130,7 +130,6 @@ async fn main() -> Result<()> {
         &format!("{}:{local_main_temp_branch}", config.remote_branch),
     ])?;
 
-    println!("first");
     git(&["checkout", &local_main_temp_branch])?;
 
     let client = Arc::new(reqwest::Client::new());
@@ -177,7 +176,6 @@ async fn main() -> Result<()> {
                 let files_with_conflicts = git(&["diff", "--name-only", "--diff-filter=U"])?;
                 for file_with_conflict in files_with_conflicts.lines() {
                     if file_with_conflict.ends_with(".md") {
-                        println!("second");
                         git(&["checkout", "--ours", file_with_conflict])?;
                         git(&["add", file_with_conflict])?;
                         println!("Merged {remote_branch} successfully and disregarded conflicts")
