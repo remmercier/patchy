@@ -201,6 +201,7 @@ async fn main() -> Result<()> {
 
     // clean up
     git(&["remote", "remove", &local_main_temp_remote])?;
+    git(&["branch", "-D", &config.remote_branch])?;
 
     Ok(())
 }
