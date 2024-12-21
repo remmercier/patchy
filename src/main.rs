@@ -1,8 +1,9 @@
-use std::sync::Arc;
+use std::{fs::File, sync::Arc};
 
 use anyhow::{anyhow, bail, Context, Result};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
+use std::io::{Read, Seek, SeekFrom, Write};
 use tokio::task::JoinSet;
 
 fn git<I, S>(args: I) -> Result<String>
@@ -63,9 +64,9 @@ async fn main() -> Result<()> {
         bail!("Not in a git repository");
     }
 
-    let config_raw = std::env::current_dir()
-        .map(|z| z.join(CONFIG_FILE))
-        .and_then(std::fs::read_to_string)
+    let config_file = std::env::current_dir().map(|cd| cd.join(CONFIG_FILE))?;
+
+    let config_raw = std::fs::read_to_string(config_file.clone())
         .context(format!("Could not find `{CONFIG_FILE}` configuration file"))?;
 
     let config = toml::from_str::<Configuration>(&config_raw).context(format!(
@@ -73,12 +74,8 @@ async fn main() -> Result<()> {
     ))?;
 
     // backup the config file
-
-    let config_file_backup_branch = format!("{APP_NAME}-config-file-backup");
-
-    git(["switch", "--create", &config_file_backup_branch])?;
-    git(["add", CONFIG_FILE])?;
-    git(["commit", "--message", &format!("Backup {CONFIG_FILE}")])?;
+    let mut backup_file: File = tempfile::tempfile().context("Unable to backup config file")?;
+    write!(backup_file, "{config_raw}");
 
     // fetch and checkout the main repository in detached HEAD state from the remote
 
@@ -164,15 +161,18 @@ async fn main() -> Result<()> {
     ])?;
 
     // Restore our configuration file
-    git(["cherry-pick", "--no-commit", &config_file_backup_branch])?;
+    let mut buf = String::new();
+    backup_file
+        .read_to_string(&mut buf)
+        .context("Unable to restore config file")?;
+
+    File::create(config_file).and_then(|mut file| file.write(buf.as_bytes()))?;
+
     git([
         "commit",
         "--message",
         &format!("{APP_NAME}: Restore {CONFIG_FILE}"),
     ])?;
-
-    // cleanup
-    git(["branch", "--delete", &config_file_backup_branch])?;
 
     Ok(())
 }

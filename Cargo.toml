@@ -14,3 +14,4 @@ reqwest = { version = "0.12", default-features = false, features = [
   "rustls-tls",
 ] }
 serde_json = "1.0"
+tempfile = "3.14"
