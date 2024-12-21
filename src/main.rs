@@ -60,57 +60,61 @@ async fn main() -> Result<()> {
     // let client = reqwest::Client::new();
 
     // fetch each pull request and merge it into the detached head remote
-    while let Some(pull_request) = config.pull_requests.first() {
+    //
+    for pull_request in config.pull_requests.iter() {
         dbg!(pull_request);
-        // let request = client
-        //     .get(format!(
-        //         "https://api.github.com/repos/{}/pulls/{pull_request}",
-        //         config.repo
-        //     ))
-        //     .header(USER_AGENT, "{APP_NAME}")
-        //     .send()
-        //     .await;
-
-        // let response = match handle_request(request).await {
-        //     Ok(response) => response,
-        //     Err(err) => {
-        //         eprintln!("An error has occured: {err}");
-        //         continue;
-        //     }
-        // };
-
-        // let remote_remote = &response.head.repo.clone_url;
-        // let local_remote = with_uuid(&response.head.r#ref);
-        // let remote_branch = &response.head.r#ref;
-        // let local_branch = with_uuid(remote_branch);
-
-        // if let Err(err) = async {
-        //     add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
-        //     merge_into_main(&local_branch, remote_branch)?;
-        //     Ok::<(), anyhow::Error>(())
-        // }
-        // .await
-        // {
-        //     eprintln!("An error has occured: {err}");
-        //     continue;
-        // }
-
-        // if git(&["diff", "--cached", "--quiet"]).is_ok() {
-        //     println!("No changes to commit after merging");
-        // } else {
-        //     git(&[
-        //         "commit",
-        //         "--message",
-        //         &format!(
-        //             "{APP_NAME}: Merge branch {remote_branch} of {remote_remote} [resolved conflicts]"
-        //         ),
-        //     ])?;
-        // }
-
-        // // clean up by removing the temporary remote
-        // git(&["remote", "remove", &local_remote])?;
-        // git(&["branch", "-D", &local_branch])?;
     }
+    // while let Some(pull_request) = config.pull_requests.iter().next() {
+    //     dbg!(pull_request);
+    // let request = client
+    //     .get(format!(
+    //         "https://api.github.com/repos/{}/pulls/{pull_request}",
+    //         config.repo
+    //     ))
+    //     .header(USER_AGENT, "{APP_NAME}")
+    //     .send()
+    //     .await;
+
+    // let response = match handle_request(request).await {
+    //     Ok(response) => response,
+    //     Err(err) => {
+    //         eprintln!("An error has occured: {err}");
+    //         continue;
+    //     }
+    // };
+
+    // let remote_remote = &response.head.repo.clone_url;
+    // let local_remote = with_uuid(&response.head.r#ref);
+    // let remote_branch = &response.head.r#ref;
+    // let local_branch = with_uuid(remote_branch);
+
+    // if let Err(err) = async {
+    //     add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
+    //     merge_into_main(&local_branch, remote_branch)?;
+    //     Ok::<(), anyhow::Error>(())
+    // }
+    // .await
+    // {
+    //     eprintln!("An error has occured: {err}");
+    //     continue;
+    // }
+
+    // if git(&["diff", "--cached", "--quiet"]).is_ok() {
+    //     println!("No changes to commit after merging");
+    // } else {
+    //     git(&[
+    //         "commit",
+    //         "--message",
+    //         &format!(
+    //             "{APP_NAME}: Merge branch {remote_branch} of {remote_remote} [resolved conflicts]"
+    //         ),
+    //     ])?;
+    // }
+
+    // // clean up by removing the temporary remote
+    // git(&["remote", "remove", &local_remote])?;
+    // git(&["branch", "-D", &local_branch])?;
+    // }
 
     // let temporary_branch = with_uuid("temp-branch");
 
