@@ -1,82 +1,20 @@
-use std::ffi::OsString;
-use std::fs::ReadDir;
-use std::io::Write;
+mod backup;
 mod commands;
 mod types;
+mod utils;
 
-use std::{
-    fs::{create_dir, read_dir, read_to_string, File},
-    path::PathBuf,
-};
+use std::fs::{create_dir, read_dir};
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
+use backup::{backup_files, restore_backup};
 use commands::{add_remote_branch, git, merge_into_main};
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
-use reqwest::{Error, Response};
-use tempfile::tempfile;
-use types::{Configuration, GitHubResponse};
+use types::Configuration;
+use utils::{handle_request, with_uuid};
 
 static CONFIG_ROOT: &str = ".gitpatcher";
 static CONFIG_FILE: &str = "config.toml";
 static APP_NAME: &str = "gitpatcher";
-
-fn with_uuid(s: &str) -> String {
-    let hash: String = thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(30)
-        .map(char::from)
-        .collect();
-
-    format!("gitpatcher-{s}-{hash}")
-}
-
-fn backup_files(config_files: ReadDir) -> Vec<(OsString, File, String)> {
-    config_files
-        .filter_map(|config_file| {
-            if let Ok(config_file) = config_file {
-                let mut destination_backed_up = tempfile().unwrap();
-                let contents = read_to_string(config_file.path()).unwrap();
-                let filename = config_file.file_name();
-                if write!(destination_backed_up, "{contents}").is_ok() {
-                    Some((filename, destination_backed_up, contents))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        .collect()
-}
-
-fn restore_backup(file_name: &OsString, contents: &str) -> Result<()> {
-    let path = PathBuf::from(CONFIG_ROOT).join(file_name);
-    let mut file = File::create(&path)?;
-
-    write!(file, "{contents}")?;
-
-    Ok(())
-}
-
-async fn handle_request(request: Result<Response, Error>) -> Result<GitHubResponse> {
-    match request {
-        Ok(res) if res.status().is_success() => {
-            let out = res.text().await?;
-
-            let response: GitHubResponse =
-                serde_json::from_str(&out).context("Could not parse response.\n{out}")?;
-
-            Ok(response)
-        }
-        Ok(res) => Err(anyhow!(
-            "Request failed with status: {}\nResponse: {}",
-            res.status(),
-            res.text().await?
-        )),
-        Err(err) => Err(anyhow!("Error sending request: {}", err)),
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -122,7 +60,7 @@ async fn main() -> Result<()> {
     let client = reqwest::Client::new();
 
     // fetch each pull request and merge it into the detached head remote
-    while let Some(pull_request) = config.pull_requests.iter().next() {
+    while let Some(pull_request) = config.pull_requests.first() {
         let request = client
             .get(format!(
                 "https://api.github.com/repos/{}/pulls/{pull_request}",
@@ -140,26 +78,21 @@ async fn main() -> Result<()> {
             }
         };
 
-        let local_remote_name = with_uuid(&response.head.r#ref);
-        let remote = &response.head.repo.clone_url;
+        let remote_remote = &response.head.repo.clone_url;
+        let local_remote = with_uuid(&response.head.r#ref);
         let remote_branch = &response.head.r#ref;
         let local_branch = with_uuid(remote_branch);
 
-        match add_remote_branch(&local_remote_name, &local_branch, remote, remote_branch) {
-            Ok(_) => (),
-            Err(err) => {
-                eprintln!("An error has occured: {err}");
-                continue;
-            }
-        };
-
-        match merge_into_main(&local_branch, remote_branch) {
-            Ok(_) => (),
-            Err(err) => {
-                eprintln!("An error has occured: {err}");
-                continue;
-            }
-        };
+        if let Err(err) = async {
+            add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
+            merge_into_main(&local_branch, remote_branch)?;
+            Ok::<(), anyhow::Error>(())
+        }
+        .await
+        {
+            eprintln!("An error has occured: {err}");
+            continue;
+        }
 
         if git(&["diff", "--cached", "--quiet"]).is_ok() {
             println!("No changes to commit after merging");
@@ -168,17 +101,17 @@ async fn main() -> Result<()> {
                 "commit",
                 "--message",
                 &format!(
-                    "{APP_NAME}: Merge branch {remote_branch} of {remote} [resolved conflicts]"
+                    "{APP_NAME}: Merge branch {remote_branch} of {remote_remote} [resolved conflicts]"
                 ),
             ])?;
         }
 
         // clean up by removing the temporary remote
-        git(&["remote", "remove", &local_remote_name])?;
+        git(&["remote", "remove", &local_remote])?;
         git(&["branch", "-D", &local_branch])?;
     }
 
-    let temporary_branch = with_uuid("temp");
+    let temporary_branch = with_uuid("temp-branch");
 
     git(&["switch", "--create", &temporary_branch])?;
 

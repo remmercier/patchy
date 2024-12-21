@@ -1,5 +1,3 @@
-use anyhow::Error;
-
 pub fn git(args: &[&str]) -> anyhow::Result<String> {
     let current_dir = std::env::current_dir()?;
 
