@@ -132,11 +132,11 @@ async fn main() -> Result<()> {
         restore_backup(file_name, contents).context("Could not restore backups")?;
 
         // apply patches if they exist
-        if let Some(ref patches) = config.patches {
-            if patches.contains(file_name.to_str().unwrap()) {
-                git(&["am", "--keep-cr", "--signoff", contents])?;
-            }
-        }
+        // if let Some(ref patches) = config.patches {
+        //     if patches.contains(file_name.to_str().unwrap()) {
+        //         git(&["am", "--keep-cr", "--signoff", contents])?;
+        //     }
+        // }
     }
 
     // clean up
