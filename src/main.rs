@@ -199,6 +199,8 @@ async fn main() -> Result<()> {
 
     File::create(config_file).and_then(|mut file| file.write(buf.as_bytes()))?;
 
+    git(["add", CONFIG_FILE])?;
+
     git([
         "commit",
         "--message",
