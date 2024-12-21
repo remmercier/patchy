@@ -57,99 +57,100 @@ async fn main() -> Result<()> {
 
     git(&["checkout", &local_main_temp_branch])?;
 
-    let client = reqwest::Client::new();
+    // let client = reqwest::Client::new();
 
     // fetch each pull request and merge it into the detached head remote
     while let Some(pull_request) = config.pull_requests.first() {
-        let request = client
-            .get(format!(
-                "https://api.github.com/repos/{}/pulls/{pull_request}",
-                config.repo
-            ))
-            .header(USER_AGENT, "{APP_NAME}")
-            .send()
-            .await;
+        dbg!(pull_request);
+        // let request = client
+        //     .get(format!(
+        //         "https://api.github.com/repos/{}/pulls/{pull_request}",
+        //         config.repo
+        //     ))
+        //     .header(USER_AGENT, "{APP_NAME}")
+        //     .send()
+        //     .await;
 
-        let response = match handle_request(request).await {
-            Ok(response) => response,
-            Err(err) => {
-                eprintln!("An error has occured: {err}");
-                continue;
-            }
-        };
+        // let response = match handle_request(request).await {
+        //     Ok(response) => response,
+        //     Err(err) => {
+        //         eprintln!("An error has occured: {err}");
+        //         continue;
+        //     }
+        // };
 
-        let remote_remote = &response.head.repo.clone_url;
-        let local_remote = with_uuid(&response.head.r#ref);
-        let remote_branch = &response.head.r#ref;
-        let local_branch = with_uuid(remote_branch);
+        // let remote_remote = &response.head.repo.clone_url;
+        // let local_remote = with_uuid(&response.head.r#ref);
+        // let remote_branch = &response.head.r#ref;
+        // let local_branch = with_uuid(remote_branch);
 
-        if let Err(err) = async {
-            add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
-            merge_into_main(&local_branch, remote_branch)?;
-            Ok::<(), anyhow::Error>(())
-        }
-        .await
-        {
-            eprintln!("An error has occured: {err}");
-            continue;
-        }
+        // if let Err(err) = async {
+        //     add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
+        //     merge_into_main(&local_branch, remote_branch)?;
+        //     Ok::<(), anyhow::Error>(())
+        // }
+        // .await
+        // {
+        //     eprintln!("An error has occured: {err}");
+        //     continue;
+        // }
 
-        if git(&["diff", "--cached", "--quiet"]).is_ok() {
-            println!("No changes to commit after merging");
-        } else {
-            git(&[
-                "commit",
-                "--message",
-                &format!(
-                    "{APP_NAME}: Merge branch {remote_branch} of {remote_remote} [resolved conflicts]"
-                ),
-            ])?;
-        }
+        // if git(&["diff", "--cached", "--quiet"]).is_ok() {
+        //     println!("No changes to commit after merging");
+        // } else {
+        //     git(&[
+        //         "commit",
+        //         "--message",
+        //         &format!(
+        //             "{APP_NAME}: Merge branch {remote_branch} of {remote_remote} [resolved conflicts]"
+        //         ),
+        //     ])?;
+        // }
 
-        // clean up by removing the temporary remote
-        git(&["remote", "remove", &local_remote])?;
-        git(&["branch", "-D", &local_branch])?;
+        // // clean up by removing the temporary remote
+        // git(&["remote", "remove", &local_remote])?;
+        // git(&["branch", "-D", &local_branch])?;
     }
 
-    let temporary_branch = with_uuid("temp-branch");
+    // let temporary_branch = with_uuid("temp-branch");
 
-    git(&["switch", "--create", &temporary_branch])?;
+    // git(&["switch", "--create", &temporary_branch])?;
 
     // forcefully renames the branch we are currently on into the branch specified by the user.
     // WARNING: this is a destructive action which erases the original branch
-    git(&[
-        "branch",
-        "--move",
-        "--force",
-        &temporary_branch,
-        &config.local_branch,
-    ])?;
+    // git(&[
+    //     "branch",
+    //     "--move",
+    //     "--force",
+    //     &temporary_branch,
+    //     &config.local_branch,
+    // ])?;
 
-    // Restore our configuration files
-    create_dir(CONFIG_ROOT)?;
+    // // Restore our configuration files
+    // create_dir(CONFIG_ROOT)?;
 
-    for (file_name, _, contents) in backed_up_files.iter() {
-        restore_backup(file_name, contents).context("Could not restore backups")?;
+    // for (file_name, _, contents) in backed_up_files.iter() {
+    //     restore_backup(file_name, contents).context("Could not restore backups")?;
 
-        // apply patches if they exist
-        if let Some(ref patches) = config.patches {
-            if patches.contains(file_name.to_str().unwrap()) {
-                git(&["am", "--keep-cr", "--signoff", contents])?;
-            }
-        }
-    }
+    //     // apply patches if they exist
+    //     if let Some(ref patches) = config.patches {
+    //         if patches.contains(file_name.to_str().unwrap()) {
+    //             git(&["am", "--keep-cr", "--signoff", contents])?;
+    //         }
+    //     }
+    // }
 
-    // clean up
-    git(&["remote", "remove", &local_main_temp_remote])?;
-    git(&["branch", "-D", &local_main_temp_branch])?;
+    // // clean up
+    // git(&["remote", "remove", &local_main_temp_remote])?;
+    // git(&["branch", "-D", &local_main_temp_branch])?;
 
-    git(&["add", CONFIG_ROOT])?;
+    // git(&["add", CONFIG_ROOT])?;
 
-    git(&[
-        "commit",
-        "--message",
-        &format!("{APP_NAME}: Restore configuration files"),
-    ])?;
+    // git(&[
+    //     "commit",
+    //     "--message",
+    //     &format!("{APP_NAME}: Restore configuration files"),
+    // ])?;
 
     Ok(())
 }
