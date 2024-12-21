@@ -141,6 +141,9 @@ async fn main() -> Result<()> {
             "--message",
             &format!("{APP_NAME}: Merge remote {remote_branch} of {remote}"),
         ])?;
+
+        // clean up by removing the temporary remote
+        git(["remote", "add", &local_remote_name])?;
     }
 
     let temporary_branch = "another-temporary-branch";
