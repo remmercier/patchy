@@ -139,7 +139,6 @@ async fn main() -> Result<()> {
                     "am",
                     "--keep-cr",
                     "--signoff",
-                    "<",
                     &format!("{CONFIG_ROOT}/{file_name}"),
                 ])?;
             }
