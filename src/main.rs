@@ -226,13 +226,13 @@ async fn main() -> Result<()> {
 
     dbg!(&lol);
 
-    // for (file_name, _, contents) in backed_up_files {
-    //     let z = PathBuf::from(CONFIG_ROOT).join(file_name);
-    //     let mut file = File::create(z).unwrap();
-    //     dbg!(&file, &contents);
+    for (file_name, _, contents) in lol {
+        let z = PathBuf::from(CONFIG_ROOT).join(file_name);
+        let mut file = File::create(z).unwrap();
+        dbg!(&file, &contents);
 
-    //     write!(file, "{contents}")?;
-    // }
+        write!(file, "{contents}")?;
+    }
 
     // clean up
     git(&["remote", "remove", &local_main_temp_remote])?;
