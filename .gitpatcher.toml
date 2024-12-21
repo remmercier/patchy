@@ -1,4 +1,0 @@
-repo = "helix-editor/helix"
-remote-branch = "master"
-local-branch = "testing1234"
-pull-requests = ["12308", "12275", "12241"]
