@@ -10,7 +10,7 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context, Result};
-use commands::git;
+use commands::{add_remote_branch, git};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
 use reqwest::{Error, Response};
@@ -21,7 +21,7 @@ static CONFIG_ROOT: &str = ".gitpatcher";
 static CONFIG_FILE: &str = "config.toml";
 static APP_NAME: &str = "gitpatcher";
 
-fn gen_name(s: &str) -> String {
+fn with_uuid(s: &str) -> String {
     let hash: String = thread_rng()
         .sample_iter(&Alphanumeric)
         .take(30)
@@ -59,7 +59,7 @@ fn restore_backup(file_name: OsString, contents: String) -> Result<()> {
     Ok(())
 }
 
-async fn parse_response(request: Result<Response, Error>) -> Result<GitHubResponse> {
+async fn handle_request(request: Result<Response, Error>) -> Result<GitHubResponse> {
     match request {
         Ok(res) if res.status().is_success() => {
             let out = res.text().await?;
@@ -100,7 +100,7 @@ async fn main() -> Result<()> {
 
     let backed_up_files = backup_files(config_files);
 
-    let local_main_temp_remote = gen_name(&config.repo);
+    let local_main_temp_remote = with_uuid(&config.repo);
 
     git(&[
         "remote",
@@ -109,7 +109,7 @@ async fn main() -> Result<()> {
         &format!("https://github.com/{}.git", config.repo),
     ])?;
 
-    let local_main_temp_branch = gen_name(&config.remote_branch);
+    let local_main_temp_branch = with_uuid(&config.remote_branch);
 
     git(&[
         "fetch",
@@ -132,7 +132,7 @@ async fn main() -> Result<()> {
             .send()
             .await;
 
-        let response = match parse_response(request).await {
+        let response = match handle_request(request).await {
             Ok(response) => response,
             Err(err) => {
                 eprintln!("An error has occured: {err}");
@@ -140,28 +140,15 @@ async fn main() -> Result<()> {
             }
         };
 
-        let local_remote_name = gen_name(&response.head.r#ref);
+        let local_remote_name = with_uuid(&response.head.r#ref);
         let remote = &response.head.repo.clone_url;
-
-        // Fetch all of the remotes for each of the pull requests
-        match git(&["remote", "add", &local_remote_name, remote]) {
-            Ok(_) => (),
-            Err(_) => {
-                eprintln!("Could not add remote");
-                git(&["remote", "remove", &local_remote_name])?;
-                continue;
-            }
-        };
-
         let remote_branch = &response.head.r#ref;
-        let local_branch = gen_name(remote_branch);
+        let local_branch = with_uuid(remote_branch);
 
-        match git(&["fetch", remote, &format!("{remote_branch}:{local_branch}")]) {
+        match add_remote_branch(&local_remote_name, &local_branch, &remote, &remote_branch) {
             Ok(_) => (),
-            Err(_) => {
-                eprintln!("Could not fetch branch for pull request");
-                git(&["branch", "-D", &local_branch])?;
-                continue;
+            Err(err) => {
+                eprintln!("An error has occured: {err}");
             }
         };
 
@@ -201,7 +188,7 @@ async fn main() -> Result<()> {
         git(&["branch", "-D", &local_branch])?;
     }
 
-    let temporary_branch = gen_name("temp");
+    let temporary_branch = with_uuid("temp");
 
     git(&["switch", "--create", &temporary_branch])?;
 
