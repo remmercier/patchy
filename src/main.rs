@@ -7,16 +7,14 @@ mod types;
 use std::{
     fs::{create_dir, read_dir, read_to_string, File},
     path::PathBuf,
-    sync::Arc,
 };
 
-use anyhow::{bail, Context, Error, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use commands::git;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
-use reqwest::Response;
+use reqwest::{Error, Response};
 use tempfile::tempfile;
-use tokio::task::{JoinError, JoinSet};
 use types::{Configuration, GitHubResponse};
 
 static CONFIG_ROOT: &str = ".gitpatcher";
@@ -61,15 +59,23 @@ fn restore_backup(file_name: OsString, contents: String) -> Result<()> {
     Ok(())
 }
 
-async fn parse_response(
-    res: Result<Result<Response, reqwest::Error>, JoinError>,
-) -> Result<GitHubResponse> {
-    let out = res??.text().await?;
+async fn parse_response(request: Result<Response, Error>) -> Result<GitHubResponse> {
+    match request {
+        Ok(res) if res.status().is_success() => {
+            let out = res.text().await?;
 
-    let response: GitHubResponse =
-        serde_json::from_str(&out).context("Could not parse response.\n{out}")?;
+            let response: GitHubResponse =
+                serde_json::from_str(&out).context("Could not parse response.\n{out}")?;
 
-    Ok(response)
+            Ok(response)
+        }
+        Ok(res) => Err(anyhow!(
+            "Request failed with status: {}\nResponse: {}",
+            res.status(),
+            res.text().await?
+        )),
+        Err(err) => Err(anyhow!("Error sending request: {}", err)),
+    }
 }
 
 #[tokio::main]
@@ -113,31 +119,23 @@ async fn main() -> Result<()> {
 
     git(&["checkout", &local_main_temp_branch])?;
 
-    let client = Arc::new(reqwest::Client::new());
+    let client = reqwest::Client::new();
 
-    let mut set = JoinSet::new();
-
-    let requests = config.pull_requests.iter().map(|pull_request| {
-        client
-            .clone()
+    // fetch each pull request and merge it into the detached head remote
+    while let Some(pull_request) = config.pull_requests.iter().next() {
+        let request = client
             .get(format!(
                 "https://api.github.com/repos/{}/pulls/{pull_request}",
                 config.repo
             ))
             .header(USER_AGENT, "{APP_NAME}")
             .send()
-    });
+            .await;
 
-    for fut in requests {
-        set.spawn(fut);
-    }
-
-    // fetch each pull request and merge it into the detached head remote
-    while let Some(res) = set.join_next().await {
-        let response = match parse_response(res).await {
-            Ok(res) => res,
-            Err(error) => {
-                eprintln!("{error}");
+        let response = match parse_response(request).await {
+            Ok(response) => response,
+            Err(err) => {
+                eprintln!("An error has occured: {err}");
                 continue;
             }
         };
