@@ -153,13 +153,8 @@ async fn main() -> Result<()> {
     // fetch each pull request and merge it into the detached head remote
     while let Some(res) = set.join_next().await {
         let out = res??.text().await?;
-        let response: GitHubResponse = match serde_json::from_str(&out) {
-            Ok(res) => res,
-            Err(res) => {
-                eprintln!("Could not parse response:\n{res}");
-                continue;
-            }
-        };
+        let response: GitHubResponse =
+            serde_json::from_str(&out).context("Could not parse response.\n{out}")?;
 
         let local_remote_name = format!("{APP_NAME}-{}", response.head.r#ref);
 
