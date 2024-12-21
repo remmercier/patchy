@@ -1,6 +1,7 @@
 use std::{fs::File, sync::Arc};
 
 use anyhow::{anyhow, bail, Context, Result};
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
@@ -56,6 +57,16 @@ struct Repo {
     clone_url: String,
 }
 
+fn gen_name(s: &str) -> String {
+    let hash: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(30)
+        .map(char::from)
+        .collect();
+
+    format!("gitpatcher-{s}-{hash}")
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     if git(&["rev-parse", "--is-inside-work-tree"]).is_err() {
@@ -77,7 +88,7 @@ async fn main() -> Result<()> {
 
     // fetch and checkout the main repository in detached HEAD state from the remote
 
-    let local_main_temp_remote = format!("{APP_NAME}-main-4412503");
+    let local_main_temp_remote = gen_name(&config.repo);
 
     git(&[
         "remote",
@@ -86,15 +97,17 @@ async fn main() -> Result<()> {
         &format!("https://github.com/{}.git", config.repo),
     ])?;
 
+    let local_main_temp_branch = gen_name(&config.remote_branch);
+
     git(&[
         "fetch",
         &local_main_temp_remote,
-        &format!("{0}:{0}", config.remote_branch),
+        &format!("{}:{local_main_temp_branch}", config.remote_branch),
     ])?;
 
     git(&[
         "checkout",
-        &format!("{local_main_temp_remote}/{}", config.remote_branch),
+        &format!("{local_main_temp_remote}/{local_main_temp_branch}"),
     ])?;
 
     let client = Arc::new(reqwest::Client::new());
@@ -129,24 +142,24 @@ async fn main() -> Result<()> {
         // Fetch all of the remotes for each of the pull requests
         git(&["remote", "add", &local_remote_name, remote])?;
 
+        let local_branch = gen_name(remote_branch);
+
         // Fetch the pull request branches for each of the remotes
-        git(&["fetch", remote, &format!("{0}:{0}", remote_branch)])?;
-        println!("0");
+        git(&["fetch", remote, &format!("{remote_branch}:{local_branch}")])?;
 
         // Merge all remotes into main repository
-        match git(&["merge", remote_branch, "--no-commit", "--no-ff"]) {
-            Ok(_) => println!("Merged {remote_branch} successfully"),
+        match git(&["merge", &local_branch, "--no-commit", "--no-ff"]) {
+            Ok(_) => println!("Merged {local_branch} successfully"),
             Err(_) => {
-                let diff = git(&["diff", "--name-only", "--diff-filter=U"])?;
-                for file in diff.lines() {
-                    if file.ends_with(".md") {
-                        git(&["checkout", "--ours", file])?;
-                        git(&["add", file])?;
+                let files_with_conflicts = git(&["diff", "--name-only", "--diff-filter=U"])?;
+                for file_with_conflict in files_with_conflicts.lines() {
+                    if file_with_conflict.ends_with(".md") {
+                        git(&["checkout", "--ours", file_with_conflict])?;
+                        git(&["add", file_with_conflict])?;
                     } else {
-                        eprintln!("Unresolved conflict in {file}")
+                        eprintln!("Unresolved conflict in {file_with_conflict}")
                     }
                 }
-                print!("{diff}");
             }
         };
 
@@ -157,21 +170,19 @@ async fn main() -> Result<()> {
                 "commit",
                 "--message",
                 &format!(
-                    "{APP_NAME}: Merge remote {remote_branch} of {remote} [resolved conflicts]"
+                    "{APP_NAME}: Merge branch {remote_branch} of {remote} [resolved conflicts]"
                 ),
             ])?;
         }
 
-        println!("Branch merged.");
-
         // clean up by removing the temporary remote
         git(&["remote", "remove", &local_remote_name])?;
-        git(&["branch", "-D", remote_branch])?;
+        git(&["branch", "-D", &local_branch])?;
     }
 
-    let temporary_branch = "another-temporary-branch";
+    let temporary_branch = gen_name("temp");
 
-    git(&["switch", "--create", temporary_branch])?;
+    git(&["switch", "--create", &temporary_branch])?;
 
     // forcefully renames the branch we are currently on into the branch specified by the user.
     // WARNING: this is a destructive action which erases the original branch
@@ -179,7 +190,7 @@ async fn main() -> Result<()> {
         "branch",
         "--move",
         "--force",
-        temporary_branch,
+        &temporary_branch,
         &config.local_branch,
     ])?;
 
@@ -187,7 +198,7 @@ async fn main() -> Result<()> {
     let mut buf = String::new();
     backup_file
         .read_to_string(&mut buf)
-        .context("Unable to restore config file")?;
+        .context(format!("Unable to restore {CONFIG_FILE} config file"))?;
 
     File::create(config_file).and_then(|mut file| file.write(buf.as_bytes()))?;
 
@@ -201,7 +212,7 @@ async fn main() -> Result<()> {
 
     // clean up
     git(&["remote", "remove", &local_main_temp_remote])?;
-    git(&["branch", "-D", &config.remote_branch])?;
+    git(&["branch", "-D", &local_main_temp_branch])?;
 
     Ok(())
 }

@@ -217,6 +217,7 @@ name = "gitpatcher"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",
