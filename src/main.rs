@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context, Result};
-use reqwest::{get, header::USER_AGENT};
+use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
-use tokio::{sync::Semaphore, task::JoinSet};
+use tokio::task::JoinSet;
 
 fn git<I, S>(args: I) -> Result<String>
 where
@@ -90,35 +90,80 @@ async fn main() -> Result<()> {
         set.spawn(fut);
     }
 
+    // first backup the config file
+
+    let backup_branch = "gitpatcher-config-file-backup";
+
+    git(["switch", "--create", backup_branch])?;
+    git(["add", CONFIG_FILE])?;
+    git(["commit", "--message", &format!("Backup {CONFIG_FILE}")])?;
+
+    // fetch and checkout the main repository
+
+    let local_main_temp_branch = "gitpatcher-main-4412503";
+
+    git([
+        "remote",
+        "add",
+        local_main_temp_branch,
+        &format!("https://github.com/{}.git", config.repo),
+    ])?;
+
+    git([
+        "fetch",
+        local_main_temp_branch,
+        &format!("{0}:{0}", config.remote_branch),
+    ])?;
+
+    git([
+        "checkout",
+        &format!("{local_main_temp_branch}/{}", config.remote_branch),
+    ])?;
+
+    // fetch each pull request and merge it into the temporary branch
     while let Some(res) = set.join_next().await {
         let out = res??.text().await?;
         let response: GitHubResponse = serde_json::from_str(&out).unwrap();
-        dbg!(response);
+
+        let local_branch = format!(
+            "gitpatcher-{}-{}",
+            response.head.repo.clone_url, response.head.r#ref
+        );
+
+        let remote_name = &response.head.repo.clone_url;
+        let branch = &response.head.r#ref;
+
+        // Fetch all of the remotes for each of the pull requests
+        git(["remote", "add", &local_branch, remote_name])?;
+
+        // Fetch the pull request branches for each of the remotes
+        git(["fetch", remote_name, &format!("{0}:{0}", branch)])?;
+
+        // Merge all remotes into main repository
+        git([
+            "merge",
+            &format!("{remote_name}/{branch}"),
+            "--message",
+            &format!("gitpatcher: Merge {branch} of {remote_name}"),
+        ])?;
     }
 
-    // const TASKS_LIMIT: usize = 3;
+    let another_temp = "another-temporary-branch";
 
-    // let semaphore = Arc::new(Semaphore::new(TASKS_LIMIT));
+    git(["switch", "--create", another_temp])?;
 
-    // for _ in 0..5 {
-    //     let permit = semaphore.clone().acquire_owned().await.unwrap();
-    //     tokio::spawn(async move {
-    //         let resp = client
-    //             .clone()
-    //             .get(format!(
-    //                 "https://api.github.com/repos/helix-editor/helix/pulls/12309"
-    //             ))
-    //             .header(USER_AGENT, "gitpatcher")
-    //             .send()
-    //             .await?
-    //             .text()
-    //             .await?;
+    // replace the original branch with our new branch
+    git([
+        "branch",
+        "--move",
+        "--force",
+        another_temp,
+        &config.local_branch,
+    ])?;
 
-    //         drop(permit);
-    //     });
-    // }
-
-    // semaphore.acquire_many(TASKS_LIMIT as u32).await.unwrap();
+    // Restore our configuration file
+    git(["cherry-pick", "--no-commit", backup_branch])?;
+    git(["commit", "--message", &format!("Restore {CONFIG_FILE}")])?;
 
     Ok(())
 }
