@@ -230,7 +230,7 @@ async fn main() -> Result<()> {
             let path = path.to_str().unwrap();
             dbg!(patches);
             dbg!(path);
-            if patches.contains(path) {
+            if patches.contains(file_name.to_str().unwrap()) {
                 git(&["apply", path])?;
             }
         }
