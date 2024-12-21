@@ -71,15 +71,45 @@ async fn main() -> Result<()> {
         "Could not parse `{CONFIG_FILE}` configuration file"
     ))?;
 
+    // backup the config file
+
+    let config_file_backup_branch = "gitpatcher-config-file-backup";
+
+    git(["switch", "--create", config_file_backup_branch])?;
+    git(["add", CONFIG_FILE])?;
+    git(["commit", "--message", &format!("Backup {CONFIG_FILE}")])?;
+
+    // fetch and checkout the main repository in detached HEAD state from the remote
+
+    let local_main_temp_remote = "gitpatcher-main-4412503";
+
+    git([
+        "remote",
+        "add",
+        local_main_temp_remote,
+        &format!("https://github.com/{}.git", config.repo),
+    ])?;
+
+    git([
+        "fetch",
+        local_main_temp_remote,
+        &format!("{0}:{0}", config.remote_branch),
+    ])?;
+
+    git([
+        "checkout",
+        &format!("{local_main_temp_remote}/{}", config.remote_branch),
+    ])?;
+
     let client = Arc::new(reqwest::Client::new());
 
     let mut set = JoinSet::new();
 
-    let requests = config.pull_requests.iter().map(|pr| {
+    let requests = config.pull_requests.iter().map(|pull_request| {
         client
             .clone()
             .get(format!(
-                "https://api.github.com/repos/{}/pulls/{pr}",
+                "https://api.github.com/repos/{}/pulls/{pull_request}",
                 config.repo
             ))
             .header(USER_AGENT, "gitpatcher")
@@ -90,80 +120,55 @@ async fn main() -> Result<()> {
         set.spawn(fut);
     }
 
-    // first backup the config file
-
-    let backup_branch = "gitpatcher-config-file-backup";
-
-    git(["switch", "--create", backup_branch])?;
-    git(["add", CONFIG_FILE])?;
-    git(["commit", "--message", &format!("Backup {CONFIG_FILE}")])?;
-
-    // fetch and checkout the main repository
-
-    let local_main_temp_branch = "gitpatcher-main-4412503";
-
-    git([
-        "remote",
-        "add",
-        local_main_temp_branch,
-        &format!("https://github.com/{}.git", config.repo),
-    ])?;
-
-    git([
-        "fetch",
-        local_main_temp_branch,
-        &format!("{0}:{0}", config.remote_branch),
-    ])?;
-
-    git([
-        "checkout",
-        &format!("{local_main_temp_branch}/{}", config.remote_branch),
-    ])?;
-
-    // fetch each pull request and merge it into the temporary branch
+    // fetch each pull request and merge it into the detached head remote
     while let Some(res) = set.join_next().await {
         let out = res??.text().await?;
         let response: GitHubResponse = serde_json::from_str(&out).unwrap();
 
-        let local_branch = format!(
+        let local_remote_name = format!(
             "gitpatcher-{}-{}",
             response.head.repo.clone_url, response.head.r#ref
         );
 
-        let remote_name = &response.head.repo.clone_url;
-        let branch = &response.head.r#ref;
+        let remote = &response.head.repo.clone_url;
+        let remote_branch = &response.head.r#ref;
 
         // Fetch all of the remotes for each of the pull requests
-        git(["remote", "add", &local_branch, remote_name])?;
+        git(["remote", "add", &local_remote_name, remote])?;
 
         // Fetch the pull request branches for each of the remotes
-        git(["fetch", remote_name, &format!("{0}:{0}", branch)])?;
+        git(["fetch", remote, &format!("{0}:{0}", remote_branch)])?;
 
         // Merge all remotes into main repository
         git([
             "merge",
-            &format!("{remote_name}/{branch}"),
+            &format!("{remote}/{remote_branch}"),
             "--message",
-            &format!("gitpatcher: Merge {branch} of {remote_name}"),
+            &format!("gitpatcher: Merge remote {remote_branch} of {remote}"),
         ])?;
     }
 
-    let another_temp = "another-temporary-branch";
+    let temporary_branch = "another-temporary-branch";
 
-    git(["switch", "--create", another_temp])?;
+    git(["switch", "--create", temporary_branch])?;
 
-    // replace the original branch with our new branch
+    // forcefully renames the branch we are currently on into the branch specified by the user.
+    // WARNING: this is a destructive action which erases the original branch
     git([
         "branch",
         "--move",
         "--force",
-        another_temp,
+        temporary_branch,
         &config.local_branch,
     ])?;
 
     // Restore our configuration file
-    git(["cherry-pick", "--no-commit", backup_branch])?;
-    git(["commit", "--message", &format!("Restore {CONFIG_FILE}")])?;
+    git(["cherry-pick", "--no-commit", config_file_backup_branch])?;
+    git([
+        "commit",
+        "--message",
+        &format!("gitpatcher: Restore {CONFIG_FILE}"),
+    ])?;
 
     Ok(())
 }
