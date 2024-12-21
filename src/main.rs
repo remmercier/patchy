@@ -73,9 +73,9 @@ async fn main() -> Result<()> {
         bail!("Not in a git repository");
     }
 
-    let config_file = std::env::current_dir().map(|cd| cd.join(CONFIG_FILE))?;
+    let config_file_path = std::env::current_dir().map(|cd| cd.join(CONFIG_FILE))?;
 
-    let config_raw = std::fs::read_to_string(config_file.clone())
+    let config_raw = std::fs::read_to_string(config_file_path.clone())
         .context(format!("Could not find `{CONFIG_FILE}` configuration file"))?;
 
     let config = toml::from_str::<Configuration>(&config_raw).context(format!(
@@ -105,10 +105,7 @@ async fn main() -> Result<()> {
         &format!("{}:{local_main_temp_branch}", config.remote_branch),
     ])?;
 
-    git(&[
-        "checkout",
-        &format!("{local_main_temp_remote}/{local_main_temp_branch}"),
-    ])?;
+    git(&["checkout", &local_main_temp_branch])?;
 
     let client = Arc::new(reqwest::Client::new());
 
@@ -195,12 +192,12 @@ async fn main() -> Result<()> {
     ])?;
 
     // Restore our configuration file
-    let mut buf = String::new();
+    let mut config = String::new();
     backup_file
-        .read_to_string(&mut buf)
+        .read_to_string(&mut config)
         .context(format!("Unable to restore {CONFIG_FILE} config file"))?;
 
-    File::create(config_file).and_then(|mut file| file.write(buf.as_bytes()))?;
+    File::create(config_file_path).and_then(|mut path| path.write(config.as_bytes()))?;
 
     git(&["add", CONFIG_FILE])?;
 
