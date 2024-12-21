@@ -113,7 +113,7 @@ async fn main() -> Result<()> {
 
     let lol = backed_up_files.collect::<Vec<_>>();
 
-    dbg!(lol);
+    dbg!(&lol);
 
     let local_main_temp_remote = gen_name(&config.repo);
 
@@ -223,6 +223,8 @@ async fn main() -> Result<()> {
 
     // Restore our configuration files
     create_dir(CONFIG_ROOT)?;
+
+    dbg!(&lol);
 
     // for (file_name, _, contents) in backed_up_files {
     //     let z = PathBuf::from(CONFIG_ROOT).join(file_name);
