@@ -143,7 +143,7 @@ async fn main() -> Result<()> {
         ])?;
 
         // clean up by removing the temporary remote
-        git(["remote", "add", &local_remote_name])?;
+        git(["remote", "remove", &local_remote_name])?;
     }
 
     let temporary_branch = "another-temporary-branch";
