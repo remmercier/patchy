@@ -17,7 +17,7 @@ index c6cefd92..105b8f99 100644
          // z family for save/restore/combine from/to sels from register
 
 -        "C-i" | "tab" => jump_forward, // tab == <C-i>
-+        "C-i" => jump_forward, // tab == <C-i> ABCDEFGHIJKLMNOPQRSTUVWXYZ
++        "C-i" => jump_forward, // tab == <C-i>
          "C-o" => jump_backward,
          "C-s" => save_selection,
 

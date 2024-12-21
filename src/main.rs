@@ -227,11 +227,8 @@ async fn main() -> Result<()> {
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
-            let path = path.to_str().unwrap();
-            dbg!(patches);
-            dbg!(path);
             if patches.contains(file_name.to_str().unwrap()) {
-                git(&["apply", path])?;
+                git(&["am", "--keep-cr", "--signoff", &contents])?;
             }
         }
     }
