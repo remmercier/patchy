@@ -12,8 +12,14 @@ where
     S: AsRef<std::ffi::OsStr>,
 {
     let current_dir = std::env::current_dir().unwrap();
+
+    let args_vec: Vec<String> = args
+        .into_iter()
+        .map(|arg| arg.as_ref().to_string_lossy().into_owned())
+        .collect();
+
     let output = std::process::Command::new("git")
-        .args(args)
+        .args(&args_vec)
         .current_dir(current_dir)
         .output()?;
 
@@ -23,7 +29,8 @@ where
             .to_owned())
     } else {
         Err(anyhow!(
-            "Git command failed.\nStdout: {}\nStderr: {}",
+            "Git command failed.\nCommand: git {}\nStdout: {}\nStderr: {}",
+            args_vec.join(" "),
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr),
         ))
