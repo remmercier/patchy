@@ -10,7 +10,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Write};
+use std::io::Write;
 use tempfile::tempfile;
 use tokio::task::JoinSet;
 
@@ -228,8 +228,11 @@ async fn main() -> Result<()> {
 
         write!(file, "{contents}")?;
 
+        // apply patches if they exist
         if let Some(ref patches) = config.patches {
-            if patches.contains(&file_name) {
+            let mut extension = OsString::from(".patch");
+            extension.push(file_name);
+            if patches.contains(&extension) {
                 let path = path.to_str().unwrap();
                 git(&["apply", path])?;
             }
