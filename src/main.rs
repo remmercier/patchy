@@ -96,24 +96,22 @@ async fn main() -> Result<()> {
 
     let config_files = read_dir(config_path)?;
 
-    let backed_up_files = config_files.filter_map(|config_file| {
-        if let Ok(config_file) = config_file {
-            let mut destination_backed_up = tempfile().unwrap();
-            let contents = read_to_string(config_file.path()).unwrap();
-            let filename = config_file.file_name();
-            if write!(destination_backed_up, "{contents}").is_ok() {
-                Some((filename, destination_backed_up, contents))
+    let backed_up_files: Vec<_> = config_files
+        .filter_map(|config_file| {
+            if let Ok(config_file) = config_file {
+                let mut destination_backed_up = tempfile().unwrap();
+                let contents = read_to_string(config_file.path()).unwrap();
+                let filename = config_file.file_name();
+                if write!(destination_backed_up, "{contents}").is_ok() {
+                    Some((filename, destination_backed_up, contents))
+                } else {
+                    None
+                }
             } else {
                 None
             }
-        } else {
-            None
-        }
-    });
-
-    let lol = backed_up_files.collect::<Vec<_>>();
-
-    dbg!(&lol);
+        })
+        .collect();
 
     let local_main_temp_remote = gen_name(&config.repo);
 
@@ -224,12 +222,9 @@ async fn main() -> Result<()> {
     // Restore our configuration files
     create_dir(CONFIG_ROOT)?;
 
-    dbg!(&lol);
-
-    for (file_name, _, contents) in lol {
+    for (file_name, _, contents) in backed_up_files {
         let z = PathBuf::from(CONFIG_ROOT).join(file_name);
         let mut file = File::create(z).unwrap();
-        dbg!(&file, &contents);
 
         write!(file, "{contents}")?;
     }
@@ -240,11 +235,11 @@ async fn main() -> Result<()> {
 
     git(&["add", CONFIG_ROOT])?;
 
-    // git(&[
-    //     "commit",
-    //     "--message",
-    //     &format!("{APP_NAME}: Restore configuration files"),
-    // ])?;
+    git(&[
+        "commit",
+        "--message",
+        &format!("{APP_NAME}: Restore configuration files"),
+    ])?;
 
     Ok(())
 }
