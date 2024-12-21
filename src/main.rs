@@ -1,10 +1,16 @@
-use std::{fs::File, sync::Arc};
+use std::{
+    collections::HashSet,
+    ffi::{OsStr, OsString},
+    fs::{copy, create_dir, read_dir, File},
+    sync::Arc,
+};
 
 use anyhow::{anyhow, bail, Context, Result};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
+use tempfile::tempdir;
 use tokio::task::JoinSet;
 
 fn git(args: &[&str]) -> Result<String> {
@@ -40,6 +46,7 @@ struct Configuration {
     remote_branch: String,
     local_branch: String,
     pull_requests: Vec<String>,
+    patches: Option<HashSet<OsString>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -74,8 +81,9 @@ async fn main() -> Result<()> {
         bail!("Not in a git repository");
     }
 
-    let config_file_path =
-        std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT).join(CONFIG_FILE))?;
+    let config_path = std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
+
+    let config_file_path = config_path.join(CONFIG_FILE);
 
     let config_raw = std::fs::read_to_string(config_file_path.clone()).context(format!(
         "Could not find `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
@@ -86,8 +94,24 @@ async fn main() -> Result<()> {
     ))?;
 
     // backup the config file
-    let mut backup_file: File = tempfile::tempfile().context("Unable to backup config file")?;
-    write!(backup_file, "{config_raw}")?;
+    let backup_dir = tempdir().context("Unable to backup configuration files, aborting")?;
+
+    let config_files = read_dir(config_path)?;
+
+    let file_backups: Vec<_> = config_files
+        .filter_map(|file| {
+            let source = file.map(|f| f.path());
+            if let Ok(source) = source {
+                Some((source.clone(), backup_dir.path().join(source)))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    for (src, dest) in &file_backups {
+        copy(src, dest)?;
+    }
 
     // fetch and checkout the main repository in detached HEAD state from the remote
 
@@ -195,20 +219,29 @@ async fn main() -> Result<()> {
         &config.local_branch,
     ])?;
 
-    // Restore our configuration file
-    let mut config = String::new();
-    backup_file.read_to_string(&mut config).context(format!(
-        "Unable to restore {CONFIG_ROOT}/{CONFIG_FILE} config file"
-    ))?;
+    // Restore our configuration files
+    create_dir(CONFIG_ROOT)?;
 
-    File::create(config_file_path).and_then(|mut path| path.write(config.as_bytes()))?;
+    let is_some = config.patches.is_some();
 
-    git(&["add", &format!("{}/{}", CONFIG_ROOT, CONFIG_FILE)])?;
+    for (src, dest) in file_backups {
+        let zzz = src.as_os_str();
+
+        if is_some && config.patches.clone().unwrap().contains(zzz) {
+            if let Some(a) = dest.to_str() {
+                git(&["apply", a])?;
+            }
+        };
+
+        copy(dest, src)?;
+    }
+
+    git(&["add", CONFIG_ROOT])?;
 
     git(&[
         "commit",
         "--message",
-        &format!("{APP_NAME}: Restore {CONFIG_FILE}"),
+        &format!("{APP_NAME}: Restore configuration files"),
     ])?;
 
     // clean up
