@@ -1,3 +1,4 @@
+use crate::APP_NAME;
 use anyhow::{anyhow, Context};
 use rand::Rng;
 use reqwest::{Error, Response};
@@ -11,7 +12,7 @@ pub fn with_uuid(s: &str) -> String {
         .map(char::from)
         .collect();
 
-    format!("gitpatcher-{s}-{hash}")
+    format!("{APP_NAME}-{s}-{hash}")
 }
 
 pub async fn handle_request(request: Result<Response, Error>) -> anyhow::Result<GitHubResponse> {
@@ -25,10 +26,10 @@ pub async fn handle_request(request: Result<Response, Error>) -> anyhow::Result<
             Ok(response)
         }
         Ok(res) => Err(anyhow!(
-            "Request failed with status: {}\nResponse: {}",
+            "Request failed with status {}\nResponse: {}",
             res.status(),
             res.text().await?
         )),
-        Err(err) => Err(anyhow!("Error sending request: {}", err)),
+        Err(err) => Err(anyhow!("Error sending request: {err}")),
     }
 }
