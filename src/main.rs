@@ -1,7 +1,7 @@
 use std::{
     collections::HashSet,
     ffi::{OsStr, OsString},
-    fs::{copy, create_dir, read_dir, File},
+    fs::{copy, create_dir, read_dir, read_to_string, File},
     sync::Arc,
 };
 
@@ -10,7 +10,7 @@ use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
-use tempfile::tempdir;
+use tempfile::{tempdir, tempfile};
 use tokio::task::JoinSet;
 
 fn git(args: &[&str]) -> Result<String> {
@@ -98,20 +98,39 @@ async fn main() -> Result<()> {
 
     let config_files = read_dir(config_path)?;
 
-    let file_backups: Vec<_> = config_files
-        .filter_map(|file| {
-            let source = file.map(|f| f.path());
-            if let Ok(source) = source {
-                Some((source.clone(), backup_dir.path().join(source)))
-            } else {
-                None
-            }
-        })
-        .collect();
+    let backed_up_files = config_files.filter_map(|config_file| {
+        if let Ok(config_file) = config_file {
+            let destination_backed_up = tempfile().unwrap();
+            let contents = read_to_string(config_file.path()).unwrap();
+            let filename = config_file.file_name();
+            write!(destination_backed_up, "{contents}");
+            Some((filename, destination_backed_up))
+        } else {
+            None
+        }
+    });
 
-    for (src, dest) in &file_backups {
-        copy(src, dest)?;
-    }
+    // let file_backups: Vec<_> = config_files
+    //     .filter_map(|file| {
+    //         let source = file.map(|f| f.path());
+    //         if let Ok(source) = source {
+    //             let tempfile = tempfile().unwrap();
+    //             write!(tempfile, )
+    //             let src = source.clone();
+    //             let dest = backup_dir.path().join(source);
+    //             Some((src, dest))
+    //         } else {
+    //             None
+    //         }
+    //     })
+    //     .collect();
+
+    // for (src, dest) in &file_backups {
+    //     dbg!(src, dest);
+    //     copy(src, dest)?;
+    // }
+
+    // panic!("stop here");
 
     // fetch and checkout the main repository in detached HEAD state from the remote
 
@@ -226,7 +245,12 @@ async fn main() -> Result<()> {
 
     // let is_some = config.patches.is_some();
 
-    for (src, dest) in file_backups {
+    for (name, mut dest) in backed_up_files {
+        let mut file = File::create(name).unwrap();
+        let mut contents = String::new();
+        dest.read_to_string(&mut contents)?;
+
+        write!(file, "{contents}");
         // let zzz = src.as_os_str();
 
         // if is_some && config.patches.clone().unwrap().contains(zzz) {
@@ -235,7 +259,7 @@ async fn main() -> Result<()> {
         //     }
         // };
 
-        copy(dest, src)?;
+        // copy(dest, name)?;
     }
 
     git(&["add", CONFIG_ROOT])?;
