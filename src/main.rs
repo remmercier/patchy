@@ -15,7 +15,7 @@ use tempfile::tempfile;
 use tokio::task::JoinSet;
 
 fn git(args: &[&str]) -> Result<String> {
-    let current_dir = std::env::current_dir().unwrap();
+    let current_dir = std::env::current_dir()?;
 
     let output = std::process::Command::new("git")
         .args(args)
@@ -155,7 +155,7 @@ async fn main() -> Result<()> {
     // fetch each pull request and merge it into the detached head remote
     while let Some(res) = set.join_next().await {
         let out = res??.text().await?;
-        let response: GitHubResponse = serde_json::from_str(&out).unwrap();
+        let response: GitHubResponse = serde_json::from_str(&out)?;
 
         let local_remote_name = format!("{APP_NAME}-{}", response.head.r#ref);
 
@@ -223,10 +223,17 @@ async fn main() -> Result<()> {
     create_dir(CONFIG_ROOT)?;
 
     for (file_name, _, contents) in backed_up_files {
-        let z = PathBuf::from(CONFIG_ROOT).join(file_name);
-        let mut file = File::create(z).unwrap();
+        let path = PathBuf::from(CONFIG_ROOT).join(&file_name);
+        let mut file = File::create(&path)?;
 
         write!(file, "{contents}")?;
+
+        if let Some(ref patches) = config.patches {
+            if patches.contains(&file_name) {
+                let path = path.to_str().unwrap();
+                git(&["apply", path])?;
+            }
+        }
     }
 
     // clean up
