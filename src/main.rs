@@ -133,9 +133,15 @@ async fn main() -> Result<()> {
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
-            if patches.contains(file_name.to_str().unwrap()) {
-                dbg!(contents);
-                // git(&["am", "--keep-cr", "--signoff", contents])?;
+            let file_name = file_name.to_str().unwrap();
+            if patches.contains(file_name) {
+                git(&[
+                    "am",
+                    "--keep-cr",
+                    "--signoff",
+                    "<",
+                    &format!("{CONFIG_ROOT}/{file_name}"),
+                ])?;
             }
         }
     }
