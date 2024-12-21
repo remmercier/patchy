@@ -1,69 +1,27 @@
+use std::ffi::OsString;
+use std::fs::ReadDir;
+use std::io::Write;
+mod commands;
+mod types;
+
 use std::{
-    collections::HashSet,
     fs::{create_dir, read_dir, read_to_string, File},
     path::PathBuf,
     sync::Arc,
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Error, Result};
+use commands::git;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
-use serde::{Deserialize, Serialize};
-use std::io::Write;
+use reqwest::Response;
 use tempfile::tempfile;
-use tokio::task::JoinSet;
-
-fn git(args: &[&str]) -> Result<String> {
-    let current_dir = std::env::current_dir()?;
-
-    let output = std::process::Command::new("git")
-        .args(args)
-        .current_dir(current_dir)
-        .output()?;
-
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout)
-            .trim_end()
-            .to_owned())
-    } else {
-        Err(anyhow!(
-            "Git command failed.\nCommand: git {}\nStdout: {}\nStderr: {}",
-            args.join(" "),
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr),
-        ))
-    }
-}
+use tokio::task::{JoinError, JoinSet};
+use types::{Configuration, GitHubResponse};
 
 static CONFIG_ROOT: &str = ".gitpatcher";
 static CONFIG_FILE: &str = "config.toml";
 static APP_NAME: &str = "gitpatcher";
-
-#[derive(Deserialize)]
-#[serde(rename_all = "kebab-case")]
-struct Configuration {
-    repo: String,
-    remote_branch: String,
-    local_branch: String,
-    pull_requests: Vec<String>,
-    patches: Option<HashSet<String>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct GitHubResponse {
-    head: Head,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Head {
-    repo: Repo,
-    r#ref: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Repo {
-    clone_url: String,
-}
 
 fn gen_name(s: &str) -> String {
     let hash: String = thread_rng()
@@ -73,6 +31,45 @@ fn gen_name(s: &str) -> String {
         .collect();
 
     format!("gitpatcher-{s}-{hash}")
+}
+
+fn backup_files(config_files: ReadDir) -> Vec<(OsString, File, String)> {
+    config_files
+        .filter_map(|config_file| {
+            if let Ok(config_file) = config_file {
+                let mut destination_backed_up = tempfile().unwrap();
+                let contents = read_to_string(config_file.path()).unwrap();
+                let filename = config_file.file_name();
+                if write!(destination_backed_up, "{contents}").is_ok() {
+                    Some((filename, destination_backed_up, contents))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn restore_backup(file_name: OsString, contents: String) -> Result<()> {
+    let path = PathBuf::from(CONFIG_ROOT).join(&file_name);
+    let mut file = File::create(&path)?;
+
+    write!(file, "{contents}")?;
+
+    Ok(())
+}
+
+async fn parse_response(
+    res: Result<Result<Response, reqwest::Error>, JoinError>,
+) -> Result<GitHubResponse> {
+    let out = res??.text().await?;
+
+    let response: GitHubResponse =
+        serde_json::from_str(&out).context("Could not parse response.\n{out}")?;
+
+    Ok(response)
 }
 
 #[tokio::main]
@@ -95,22 +92,7 @@ async fn main() -> Result<()> {
 
     let config_files = read_dir(config_path)?;
 
-    let backed_up_files: Vec<_> = config_files
-        .filter_map(|config_file| {
-            if let Ok(config_file) = config_file {
-                let mut destination_backed_up = tempfile().unwrap();
-                let contents = read_to_string(config_file.path()).unwrap();
-                let filename = config_file.file_name();
-                if write!(destination_backed_up, "{contents}").is_ok() {
-                    Some((filename, destination_backed_up, contents))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        .collect();
+    let backed_up_files = backup_files(config_files);
 
     let local_main_temp_remote = gen_name(&config.repo);
 
@@ -152,9 +134,13 @@ async fn main() -> Result<()> {
 
     // fetch each pull request and merge it into the detached head remote
     while let Some(res) = set.join_next().await {
-        let out = res??.text().await?;
-        let response: GitHubResponse =
-            serde_json::from_str(&out).context("Could not parse response.\n{out}")?;
+        let response = match parse_response(res).await {
+            Ok(res) => res,
+            Err(error) => {
+                eprintln!("{error}");
+                continue;
+            }
+        };
 
         let local_remote_name = format!("{APP_NAME}-{}", response.head.r#ref);
 
@@ -162,7 +148,12 @@ async fn main() -> Result<()> {
         let remote_branch = &response.head.r#ref;
 
         // Fetch all of the remotes for each of the pull requests
-        git(&["remote", "add", &local_remote_name, remote])?;
+        match git(&["remote", "add", &local_remote_name, remote]) {
+            Ok(_) => (),
+            Err(_) => {
+                git(&["remote", "remove", &local_remote_name])?;
+            }
+        };
 
         let local_branch = gen_name(remote_branch);
 
@@ -221,10 +212,7 @@ async fn main() -> Result<()> {
     create_dir(CONFIG_ROOT)?;
 
     for (file_name, _, contents) in backed_up_files {
-        let path = PathBuf::from(CONFIG_ROOT).join(&file_name);
-        let mut file = File::create(&path)?;
-
-        write!(file, "{contents}")?;
+        restore_backup(file_name, contents);
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
