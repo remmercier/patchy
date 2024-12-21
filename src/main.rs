@@ -135,12 +135,25 @@ async fn main() -> Result<()> {
         git(["fetch", remote, &format!("{0}:{0}", remote_branch)])?;
 
         // Merge all remotes into main repository
-        git([
-            "merge",
-            remote_branch,
-            "--message",
-            &format!("{APP_NAME}: Merge remote {remote_branch} of {remote}"),
-        ])?;
+        match git(["merge", remote_branch, "--no-commit", "--no-ff"]) {
+            Ok(_) => println!("Merged {remote_branch} successfully"),
+            Err(_) => {
+                let diff = git(["diff", "--name-only", "--diff-filter=U"])?;
+                print!("{diff}");
+            }
+        };
+
+        let has_uncommited_changes = git(["diff", "--cached", "--quiet"]).is_ok();
+
+        if has_uncommited_changes {
+            println!("No changes to commit after merging {remote_branch} of {remote}")
+        } else {
+            git([
+                "commit",
+                "--message",
+                &format!("{APP_NAME}: Merge remote {remote_branch} of {remote}"),
+            ])?;
+        }
 
         // clean up by removing the temporary remote
         git(["remote", "remove", &local_remote_name])?;
