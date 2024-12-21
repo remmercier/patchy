@@ -220,13 +220,21 @@ async fn main() -> Result<()> {
     // Restore our configuration files
     create_dir(CONFIG_ROOT)?;
 
-    for (file_name, _, contents) in backed_up_files {
-        let z = PathBuf::from(CONFIG_ROOT).join(file_name);
-        let mut file = File::create(z).unwrap();
-        dbg!(&file, &contents);
+    let lol = backed_up_files.collect::<Vec<_>>();
 
-        write!(file, "{contents}")?;
-    }
+    dbg!(lol);
+
+    // for (file_name, _, contents) in backed_up_files {
+    //     let z = PathBuf::from(CONFIG_ROOT).join(file_name);
+    //     let mut file = File::create(z).unwrap();
+    //     dbg!(&file, &contents);
+
+    //     write!(file, "{contents}")?;
+    // }
+
+    // clean up
+    git(&["remote", "remove", &local_main_temp_remote])?;
+    git(&["branch", "-D", &local_main_temp_branch])?;
 
     git(&["add", CONFIG_ROOT])?;
 
@@ -235,10 +243,6 @@ async fn main() -> Result<()> {
     //     "--message",
     //     &format!("{APP_NAME}: Restore configuration files"),
     // ])?;
-
-    // clean up
-    git(&["remote", "remove", &local_main_temp_remote])?;
-    git(&["branch", "-D", &local_main_temp_branch])?;
 
     Ok(())
 }
