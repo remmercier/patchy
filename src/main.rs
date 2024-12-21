@@ -132,6 +132,7 @@ async fn main() -> Result<()> {
         &format!("{}:{local_main_temp_branch}", config.remote_branch),
     ])?;
 
+    println!("first");
     git(&["checkout", &local_main_temp_branch])?;
 
     let client = Arc::new(reqwest::Client::new());
@@ -178,6 +179,7 @@ async fn main() -> Result<()> {
                 let files_with_conflicts = git(&["diff", "--name-only", "--diff-filter=U"])?;
                 for file_with_conflict in files_with_conflicts.lines() {
                     if file_with_conflict.ends_with(".md") {
+                        println!("second");
                         git(&["checkout", "--ours", file_with_conflict])?;
                         git(&["add", file_with_conflict])?;
                         println!("Merged {remote_branch} successfully and disregarded conflicts")
@@ -222,16 +224,16 @@ async fn main() -> Result<()> {
     // Restore our configuration files
     create_dir(CONFIG_ROOT)?;
 
-    let is_some = config.patches.is_some();
+    // let is_some = config.patches.is_some();
 
     for (src, dest) in file_backups {
-        let zzz = src.as_os_str();
+        // let zzz = src.as_os_str();
 
-        if is_some && config.patches.clone().unwrap().contains(zzz) {
-            if let Some(a) = dest.to_str() {
-                git(&["apply", a])?;
-            }
-        };
+        // if is_some && config.patches.clone().unwrap().contains(zzz) {
+        //     if let Some(a) = dest.to_str() {
+        //         git(&["apply", a])?;
+        //     }
+        // };
 
         copy(dest, src)?;
     }
