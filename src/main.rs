@@ -123,10 +123,7 @@ async fn main() -> Result<()> {
         let out = res??.text().await?;
         let response: GitHubResponse = serde_json::from_str(&out).unwrap();
 
-        let local_remote_name = format!(
-            "{APP_NAME}-{}-{}",
-            response.head.repo.clone_url, response.head.r#ref
-        );
+        let local_remote_name = format!("{APP_NAME}-{}", response.head.r#ref);
 
         let remote = &response.head.repo.clone_url;
         let remote_branch = &response.head.r#ref;
