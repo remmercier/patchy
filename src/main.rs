@@ -153,6 +153,7 @@ async fn main() -> Result<()> {
     // fetch each pull request and merge it into the detached head remote
     while let Some(res) = set.join_next().await {
         let out = res??.text().await?;
+        dbg!(&out);
         let response: GitHubResponse = serde_json::from_str(&out)?;
 
         let local_remote_name = format!("{APP_NAME}-{}", response.head.r#ref);
