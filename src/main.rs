@@ -20,7 +20,7 @@ fn git(args: &[&str]) -> Result<String> {
             .to_owned())
     } else {
         Err(anyhow!(
-            "Git command failed.\nCommand: {}\nStdout: {}\nStderr: {}",
+            "Git command failed.\nCommand: git {}\nStdout: {}\nStderr: {}",
             args.join(" "),
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr),
@@ -166,6 +166,7 @@ async fn main() -> Result<()> {
 
         // clean up by removing the temporary remote
         git(&["remote", "remove", &local_remote_name])?;
+        git(&["branch", "-D", remote_branch])?;
     }
 
     let temporary_branch = "another-temporary-branch";
