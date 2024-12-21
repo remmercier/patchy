@@ -137,7 +137,7 @@ async fn main() -> Result<()> {
         // Merge all remotes into main repository
         git([
             "merge",
-            &format!("{local_remote_name}/{remote_branch}"),
+            &format!("{remote_branch}/{remote_branch}"),
             "--message",
             &format!("{APP_NAME}: Merge remote {remote_branch} of {remote}"),
         ])?;
