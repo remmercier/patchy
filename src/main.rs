@@ -1,7 +1,7 @@
 use std::{
     collections::HashSet,
-    ffi::{OsStr, OsString},
-    fs::{copy, create_dir, read_dir, read_to_string, File},
+    ffi::OsString,
+    fs::{create_dir, read_dir, read_to_string, File},
     sync::Arc,
 };
 
@@ -10,7 +10,7 @@ use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
-use tempfile::{tempdir, tempfile};
+use tempfile::tempfile;
 use tokio::task::JoinSet;
 
 fn git(args: &[&str]) -> Result<String> {
@@ -93,17 +93,14 @@ async fn main() -> Result<()> {
         "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
-    // backup the config file
-    let backup_dir = tempdir().context("Unable to backup configuration files, aborting")?;
-
     let config_files = read_dir(config_path)?;
 
     let backed_up_files = config_files.filter_map(|config_file| {
         if let Ok(config_file) = config_file {
-            let destination_backed_up = tempfile().unwrap();
+            let mut destination_backed_up = tempfile().unwrap();
             let contents = read_to_string(config_file.path()).unwrap();
             let filename = config_file.file_name();
-            write!(destination_backed_up, "{contents}");
+            let _ = write!(destination_backed_up, "{contents}");
             Some((filename, destination_backed_up))
         } else {
             None
@@ -250,7 +247,7 @@ async fn main() -> Result<()> {
         let mut contents = String::new();
         dest.read_to_string(&mut contents)?;
 
-        write!(file, "{contents}");
+        let _ = write!(file, "{contents}");
         // let zzz = src.as_os_str();
 
         // if is_some && config.patches.clone().unwrap().contains(zzz) {
