@@ -30,6 +30,7 @@ where
 }
 
 static CONFIG_FILE: &str = ".gitpatcher.toml";
+static APP_NAME: &str = "gitpatcher";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -73,26 +74,26 @@ async fn main() -> Result<()> {
 
     // backup the config file
 
-    let config_file_backup_branch = "gitpatcher-config-file-backup";
+    let config_file_backup_branch = format!("{APP_NAME}-config-file-backup");
 
-    git(["switch", "--create", config_file_backup_branch])?;
+    git(["switch", "--create", &config_file_backup_branch])?;
     git(["add", CONFIG_FILE])?;
     git(["commit", "--message", &format!("Backup {CONFIG_FILE}")])?;
 
     // fetch and checkout the main repository in detached HEAD state from the remote
 
-    let local_main_temp_remote = "gitpatcher-main-4412503";
+    let local_main_temp_remote = format!("{APP_NAME}-main-4412503");
 
     git([
         "remote",
         "add",
-        local_main_temp_remote,
+        &local_main_temp_remote,
         &format!("https://github.com/{}.git", config.repo),
     ])?;
 
     git([
         "fetch",
-        local_main_temp_remote,
+        &local_main_temp_remote,
         &format!("{0}:{0}", config.remote_branch),
     ])?;
 
@@ -112,7 +113,7 @@ async fn main() -> Result<()> {
                 "https://api.github.com/repos/{}/pulls/{pull_request}",
                 config.repo
             ))
-            .header(USER_AGENT, "gitpatcher")
+            .header(USER_AGENT, "{APP_NAME}")
             .send()
     });
 
@@ -126,7 +127,7 @@ async fn main() -> Result<()> {
         let response: GitHubResponse = serde_json::from_str(&out).unwrap();
 
         let local_remote_name = format!(
-            "gitpatcher-{}-{}",
+            "{APP_NAME}-{}-{}",
             response.head.repo.clone_url, response.head.r#ref
         );
 
@@ -144,7 +145,7 @@ async fn main() -> Result<()> {
             "merge",
             &format!("{remote}/{remote_branch}"),
             "--message",
-            &format!("gitpatcher: Merge remote {remote_branch} of {remote}"),
+            &format!("{APP_NAME}: Merge remote {remote_branch} of {remote}"),
         ])?;
     }
 
@@ -163,11 +164,11 @@ async fn main() -> Result<()> {
     ])?;
 
     // Restore our configuration file
-    git(["cherry-pick", "--no-commit", config_file_backup_branch])?;
+    git(["cherry-pick", "--no-commit", &config_file_backup_branch])?;
     git([
         "commit",
         "--message",
-        &format!("gitpatcher: Restore {CONFIG_FILE}"),
+        &format!("{APP_NAME}: Restore {CONFIG_FILE}"),
     ])?;
 
     Ok(())
