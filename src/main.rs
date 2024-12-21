@@ -171,5 +171,8 @@ async fn main() -> Result<()> {
         &format!("{APP_NAME}: Restore {CONFIG_FILE}"),
     ])?;
 
+    // cleanup
+    git(["branch", "--delete", &config_file_backup_branch])?;
+
     Ok(())
 }
