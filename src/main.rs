@@ -101,36 +101,15 @@ async fn main() -> Result<()> {
             let mut destination_backed_up = tempfile().unwrap();
             let contents = read_to_string(config_file.path()).unwrap();
             let filename = config_file.file_name();
-            let _ = write!(destination_backed_up, "{contents}");
-            Some((filename, destination_backed_up))
+            if write!(destination_backed_up, "{contents}").is_ok() {
+                Some((filename, destination_backed_up, contents))
+            } else {
+                None
+            }
         } else {
             None
         }
     });
-
-    // let file_backups: Vec<_> = config_files
-    //     .filter_map(|file| {
-    //         let source = file.map(|f| f.path());
-    //         if let Ok(source) = source {
-    //             let tempfile = tempfile().unwrap();
-    //             write!(tempfile, )
-    //             let src = source.clone();
-    //             let dest = backup_dir.path().join(source);
-    //             Some((src, dest))
-    //         } else {
-    //             None
-    //         }
-    //     })
-    //     .collect();
-
-    // for (src, dest) in &file_backups {
-    //     dbg!(src, dest);
-    //     copy(src, dest)?;
-    // }
-
-    // panic!("stop here");
-
-    // fetch and checkout the main repository in detached HEAD state from the remote
 
     let local_main_temp_remote = gen_name(&config.repo);
 
@@ -241,13 +220,9 @@ async fn main() -> Result<()> {
     // Restore our configuration files
     create_dir(CONFIG_ROOT)?;
 
-    for (file_name, mut dest) in backed_up_files {
+    for (file_name, _, contents) in backed_up_files {
         let z = PathBuf::from(CONFIG_ROOT).join(file_name);
-        dbg!(&z);
         let mut file = File::create(z).unwrap();
-        let mut contents = String::new();
-        dest.read_to_string(&mut contents)?;
-        dbg!(&contents);
 
         write!(file, "{contents}")?;
     }
