@@ -29,7 +29,8 @@ fn git(args: &[&str]) -> Result<String> {
     }
 }
 
-static CONFIG_FILE: &str = ".gitpatcher.toml";
+static CONFIG_ROOT: &str = ".gitpatcher";
+static CONFIG_FILE: &str = "config.toml";
 static APP_NAME: &str = "gitpatcher";
 
 #[derive(Deserialize)]
@@ -73,13 +74,15 @@ async fn main() -> Result<()> {
         bail!("Not in a git repository");
     }
 
-    let config_file_path = std::env::current_dir().map(|cd| cd.join(CONFIG_FILE))?;
+    let config_file_path =
+        std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT).join(CONFIG_FILE))?;
 
-    let config_raw = std::fs::read_to_string(config_file_path.clone())
-        .context(format!("Could not find `{CONFIG_FILE}` configuration file"))?;
+    let config_raw = std::fs::read_to_string(config_file_path.clone()).context(format!(
+        "Could not find `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
+    ))?;
 
     let config = toml::from_str::<Configuration>(&config_raw).context(format!(
-        "Could not parse `{CONFIG_FILE}` configuration file"
+        "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
     // backup the config file
@@ -146,13 +149,14 @@ async fn main() -> Result<()> {
 
         // Merge all remotes into main repository
         match git(&["merge", &local_branch, "--no-commit", "--no-ff"]) {
-            Ok(_) => println!("Merged {local_branch} successfully"),
+            Ok(_) => println!("Merged {remote_branch} successfully"),
             Err(_) => {
                 let files_with_conflicts = git(&["diff", "--name-only", "--diff-filter=U"])?;
                 for file_with_conflict in files_with_conflicts.lines() {
                     if file_with_conflict.ends_with(".md") {
                         git(&["checkout", "--ours", file_with_conflict])?;
                         git(&["add", file_with_conflict])?;
+                        println!("Merged {remote_branch} successfully and disregarded conflicts")
                     } else {
                         eprintln!("Unresolved conflict in {file_with_conflict}")
                     }
@@ -193,13 +197,13 @@ async fn main() -> Result<()> {
 
     // Restore our configuration file
     let mut config = String::new();
-    backup_file
-        .read_to_string(&mut config)
-        .context(format!("Unable to restore {CONFIG_FILE} config file"))?;
+    backup_file.read_to_string(&mut config).context(format!(
+        "Unable to restore {CONFIG_ROOT}/{CONFIG_FILE} config file"
+    ))?;
 
     File::create(config_file_path).and_then(|mut path| path.write(config.as_bytes()))?;
 
-    git(&["add", CONFIG_FILE])?;
+    git(&["add", &format!("{}/{}", CONFIG_ROOT, CONFIG_FILE)])?;
 
     git(&[
         "commit",
