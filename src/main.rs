@@ -10,7 +10,7 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context, Result};
-use commands::{add_remote_branch, git};
+use commands::{add_remote_branch, git, merge_into_main};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use reqwest::header::USER_AGENT;
 use reqwest::{Error, Response};
@@ -50,8 +50,8 @@ fn backup_files(config_files: ReadDir) -> Vec<(OsString, File, String)> {
         .collect()
 }
 
-fn restore_backup(file_name: OsString, contents: String) -> Result<()> {
-    let path = PathBuf::from(CONFIG_ROOT).join(&file_name);
+fn restore_backup(file_name: &OsString, contents: &str) -> Result<()> {
+    let path = PathBuf::from(CONFIG_ROOT).join(file_name);
     let mut file = File::create(&path)?;
 
     write!(file, "{contents}")?;
@@ -145,29 +145,19 @@ async fn main() -> Result<()> {
         let remote_branch = &response.head.r#ref;
         let local_branch = with_uuid(remote_branch);
 
-        match add_remote_branch(&local_remote_name, &local_branch, &remote, &remote_branch) {
+        match add_remote_branch(&local_remote_name, &local_branch, remote, remote_branch) {
             Ok(_) => (),
             Err(err) => {
                 eprintln!("An error has occured: {err}");
+                continue;
             }
         };
 
-        // Merge all remotes into main repository
-        match git(&["merge", &local_branch, "--no-commit", "--no-ff"]) {
-            Ok(_) => println!("Merged {remote_branch} successfully"),
-            Err(_) => {
-                let files_with_conflicts = git(&["diff", "--name-only", "--diff-filter=U"])?;
-                for file_with_conflict in files_with_conflicts.lines() {
-                    if file_with_conflict.ends_with(".md") {
-                        git(&["checkout", "--ours", file_with_conflict])?;
-                        git(&["add", file_with_conflict])?;
-                        println!("Merged {remote_branch} successfully and disregarded conflicts")
-                    } else {
-                        eprintln!("Unresolved conflict in {file_with_conflict}");
-                        git(&["merge", "--abort"]);
-                        continue;
-                    }
-                }
+        match merge_into_main(&local_branch, remote_branch) {
+            Ok(_) => (),
+            Err(err) => {
+                eprintln!("An error has occured: {err}");
+                continue;
             }
         };
 
@@ -205,13 +195,13 @@ async fn main() -> Result<()> {
     // Restore our configuration files
     create_dir(CONFIG_ROOT)?;
 
-    for (file_name, _, contents) in backed_up_files {
-        restore_backup(file_name, contents);
+    for (file_name, _, contents) in backed_up_files.iter() {
+        restore_backup(file_name, contents).context("Could not restore backups")?;
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
             if patches.contains(file_name.to_str().unwrap()) {
-                git(&["am", "--keep-cr", "--signoff", &contents])?;
+                git(&["am", "--keep-cr", "--signoff", contents])?;
             }
         }
     }

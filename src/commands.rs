@@ -1,3 +1,5 @@
+use anyhow::Error;
+
 pub fn git(args: &[&str]) -> anyhow::Result<String> {
     let current_dir = std::env::current_dir()?;
 
@@ -23,11 +25,15 @@ pub fn git(args: &[&str]) -> anyhow::Result<String> {
 pub fn add_remote_branch(
     local_remote: &str,
     local_branch: &str,
-    remote: &str,
-    branch: &str,
+    remote_remote: &str,
+    remote_branch: &str,
 ) -> anyhow::Result<()> {
-    match git(&["remote", "add", local_remote, remote]) {
-        Ok(_) => match git(&["fetch", remote, &format!("{branch}:{local_branch}")]) {
+    match git(&["remote", "add", local_remote, remote_remote]) {
+        Ok(_) => match git(&[
+            "fetch",
+            remote_remote,
+            &format!("{remote_branch}:{local_branch}"),
+        ]) {
             Ok(_) => Ok(()),
             Err(err) => {
                 git(&["branch", "-D", local_branch])?;
@@ -39,6 +45,30 @@ pub fn add_remote_branch(
         Err(err) => {
             git(&["remote", "remove", local_remote])?;
             Err(anyhow::anyhow!("Could not add remote: {err}"))
+        }
+    }
+}
+
+pub fn merge_into_main(
+    local_branch: &str,
+    remote_branch: &str,
+) -> anyhow::Result<String, anyhow::Error> {
+    match git(&["merge", local_branch, "--no-commit", "--no-ff"]) {
+        Ok(_) => Ok(format!("Merged {remote_branch} successfully")),
+        Err(_) => {
+            let files_with_conflicts = git(&["diff", "--name-only", "--diff-filter=U"])?;
+            for file_with_conflict in files_with_conflicts.lines() {
+                if file_with_conflict.ends_with(".md") {
+                    git(&["checkout", "--ours", file_with_conflict])?;
+                    git(&["add", file_with_conflict])?;
+                } else {
+                    git(&["merge", "--abort"])?;
+                    return Err(anyhow::anyhow!(
+                        "Unresolved conflict in {file_with_conflict}"
+                    ));
+                }
+            }
+            Ok("Merged {remote_branch} successfully and disregarded conflicts".into())
         }
     }
 }
