@@ -3,7 +3,7 @@ use std::{fs::File, sync::Arc};
 use anyhow::{anyhow, bail, Context, Result};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::io::{Read, Write};
 use tokio::task::JoinSet;
 
 fn git<I, S>(args: I) -> Result<String>
@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
 
     // backup the config file
     let mut backup_file: File = tempfile::tempfile().context("Unable to backup config file")?;
-    write!(backup_file, "{config_raw}");
+    write!(backup_file, "{config_raw}")?;
 
     // fetch and checkout the main repository in detached HEAD state from the remote
 
@@ -173,6 +173,9 @@ async fn main() -> Result<()> {
         "--message",
         &format!("{APP_NAME}: Restore {CONFIG_FILE}"),
     ])?;
+
+    // clean up
+    git(["remote", "remove", &local_main_temp_remote])?;
 
     Ok(())
 }
