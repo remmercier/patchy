@@ -136,20 +136,35 @@ async fn main() -> Result<()> {
         println!("0");
 
         // Merge all remotes into main repository
-        match git([
-            "merge",
-            remote_branch,
-            "--message",
-            &format!("{APP_NAME}: Merge remote {remote_branch} of {remote}"),
-        ]) {
+        match git(["merge", remote_branch, "--no-commit", "--no-ff"]) {
             Ok(_) => println!("Merged {remote_branch} successfully"),
             Err(_) => {
                 let diff = git(["diff", "--name-only", "--diff-filter=U"])?;
+                for file in diff.lines() {
+                    if file.ends_with(".md") {
+                        git(["checkout", "--ours", file])?;
+                        git(["add", file])?;
+                    } else {
+                        eprintln!("Unresolved conflict in {file}")
+                    }
+                }
                 print!("{diff}");
             }
         };
 
-        println!("1");
+        if git(["diff", "--cached", "--quiet"]).is_ok() {
+            println!("No changes to commit after merging");
+        } else {
+            git([
+                "commit",
+                "--message",
+                &format!(
+                    "{APP_NAME}: Merge remote {remote_branch} of {remote} [resolved conflicts]"
+                ),
+            ])?;
+        }
+
+        println!("Branch merged.");
 
         // clean up by removing the temporary remote
         git(["remote", "remove", &local_remote_name])?;
