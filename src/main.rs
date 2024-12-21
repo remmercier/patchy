@@ -2,6 +2,7 @@ use std::{
     collections::HashSet,
     ffi::OsString,
     fs::{create_dir, read_dir, read_to_string, File},
+    path::PathBuf,
     sync::Arc,
 };
 
@@ -242,8 +243,9 @@ async fn main() -> Result<()> {
 
     // let is_some = config.patches.is_some();
 
-    for (name, mut dest) in backed_up_files {
-        let mut file = File::create(name).unwrap();
+    for (file_name, mut dest) in backed_up_files {
+        let z = PathBuf::from(CONFIG_ROOT).join(file_name);
+        let mut file = File::create(z).unwrap();
         let mut contents = String::new();
         dest.read_to_string(&mut contents)?;
 
