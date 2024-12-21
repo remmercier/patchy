@@ -142,23 +142,30 @@ async fn main() -> Result<()> {
             }
         };
 
-        let local_remote_name = format!("{APP_NAME}-{}", response.head.r#ref);
-
+        let local_remote_name = gen_name(&response.head.r#ref);
         let remote = &response.head.repo.clone_url;
-        let remote_branch = &response.head.r#ref;
 
         // Fetch all of the remotes for each of the pull requests
         match git(&["remote", "add", &local_remote_name, remote]) {
             Ok(_) => (),
             Err(_) => {
+                eprintln!("Could not add remote");
                 git(&["remote", "remove", &local_remote_name])?;
+                continue;
             }
         };
 
+        let remote_branch = &response.head.r#ref;
         let local_branch = gen_name(remote_branch);
 
-        // Fetch the pull request branches for each of the remotes
-        git(&["fetch", remote, &format!("{remote_branch}:{local_branch}")])?;
+        match git(&["fetch", remote, &format!("{remote_branch}:{local_branch}")]) {
+            Ok(_) => (),
+            Err(_) => {
+                eprintln!("Could not fetch branch for pull request");
+                git(&["branch", "-D", &local_branch])?;
+                continue;
+            }
+        };
 
         // Merge all remotes into main repository
         match git(&["merge", &local_branch, "--no-commit", "--no-ff"]) {
@@ -171,7 +178,9 @@ async fn main() -> Result<()> {
                         git(&["add", file_with_conflict])?;
                         println!("Merged {remote_branch} successfully and disregarded conflicts")
                     } else {
-                        eprintln!("Unresolved conflict in {file_with_conflict}")
+                        eprintln!("Unresolved conflict in {file_with_conflict}");
+                        git(&["merge", "--abort"]);
+                        continue;
                     }
                 }
             }
