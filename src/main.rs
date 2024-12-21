@@ -1,6 +1,5 @@
 use std::{
     collections::HashSet,
-    ffi::OsString,
     fs::{create_dir, read_dir, read_to_string, File},
     path::PathBuf,
     sync::Arc,
@@ -47,7 +46,7 @@ struct Configuration {
     remote_branch: String,
     local_branch: String,
     pull_requests: Vec<String>,
-    patches: Option<HashSet<OsString>>,
+    patches: Option<HashSet<String>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -228,10 +227,8 @@ async fn main() -> Result<()> {
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
-            let mut extension = OsString::from(".patch");
-            extension.push(file_name);
-            if patches.contains(&extension) {
-                let path = path.to_str().unwrap();
+            let path = path.to_str().unwrap();
+            if patches.contains(&format!("{}.patch", path)) {
                 git(&["apply", path])?;
             }
         }
