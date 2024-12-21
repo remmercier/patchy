@@ -241,24 +241,15 @@ async fn main() -> Result<()> {
     // Restore our configuration files
     create_dir(CONFIG_ROOT)?;
 
-    // let is_some = config.patches.is_some();
-
     for (file_name, mut dest) in backed_up_files {
         let z = PathBuf::from(CONFIG_ROOT).join(file_name);
+        dbg!(&z);
         let mut file = File::create(z).unwrap();
         let mut contents = String::new();
         dest.read_to_string(&mut contents)?;
+        dbg!(&contents);
 
-        let _ = write!(file, "{contents}");
-        // let zzz = src.as_os_str();
-
-        // if is_some && config.patches.clone().unwrap().contains(zzz) {
-        //     if let Some(a) = dest.to_str() {
-        //         git(&["apply", a])?;
-        //     }
-        // };
-
-        // copy(dest, name)?;
+        write!(file, "{contents}")?;
     }
 
     git(&["add", CONFIG_ROOT])?;
