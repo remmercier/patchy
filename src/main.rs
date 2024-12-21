@@ -223,26 +223,6 @@ async fn main() -> Result<()> {
     for (file_name, _, contents) in backed_up_files {
         let z = PathBuf::from(CONFIG_ROOT).join(file_name);
         let mut file = File::create(z).unwrap();
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
-        println!("ahhhhhhh");
         dbg!(&file, &contents);
 
         write!(file, "{contents}")?;
@@ -250,11 +230,11 @@ async fn main() -> Result<()> {
 
     git(&["add", CONFIG_ROOT])?;
 
-    git(&[
-        "commit",
-        "--message",
-        &format!("{APP_NAME}: Restore configuration files"),
-    ])?;
+    // git(&[
+    //     "commit",
+    //     "--message",
+    //     &format!("{APP_NAME}: Restore configuration files"),
+    // ])?;
 
     // clean up
     git(&["remote", "remove", &local_main_temp_remote])?;
