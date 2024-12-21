@@ -228,6 +228,8 @@ async fn main() -> Result<()> {
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
             let path = path.to_str().unwrap();
+            dbg!(patches);
+            dbg!(path);
             if patches.contains(path) {
                 git(&["apply", path])?;
             }
