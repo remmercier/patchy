@@ -4,6 +4,7 @@ mod types;
 mod utils;
 
 use colored::Colorize;
+use dialoguer::Confirm;
 use std::fs::{create_dir, read_dir};
 
 use anyhow::{Context, Result};
@@ -126,22 +127,8 @@ async fn main() -> Result<()> {
         }
 
         git(&["remote", "remove", &local_remote])?;
-        git(&["branch", "-D", &local_branch])?;
+        git(&["branch", "--delete", "--force", &local_branch])?;
     }
-
-    let temporary_branch = with_uuid("temp-branch");
-
-    git(&["switch", "--create", &temporary_branch])?;
-
-    // forcefully renames the branch we are currently on into the branch specified by the user.
-    // WARNING: this is a destructive action which erases the original branch
-    git(&[
-        "branch",
-        "--move",
-        "--force",
-        &temporary_branch,
-        &config.local_branch,
-    ])?;
 
     create_dir(CONFIG_ROOT)?;
 
@@ -180,17 +167,30 @@ async fn main() -> Result<()> {
         }
     }
 
-    // clean up
-    git(&["remote", "remove", &local_remote])?;
-    git(&["branch", "-D", &local_branch])?;
-
     git(&["add", CONFIG_ROOT])?;
-
     git(&[
         "commit",
         "--message",
         &format!("{APP_NAME}: Restore configuration files"),
     ])?;
+
+    let temporary_branch = with_uuid("temp-branch");
+
+    git(&["switch", "--create", &temporary_branch])?;
+
+    // forcefully renames the branch we are currently on into the branch specified by the user.
+    // WARNING: this is a destructive action which erases the original branch
+    git(&[
+        "branch",
+        "--move",
+        "--force",
+        &temporary_branch,
+        &config.local_branch,
+    ])?;
+
+    // clean up
+    git(&["remote", "remove", &local_remote])?;
+    git(&["branch", "--delete", "--force", &local_branch])?;
 
     Ok(())
 }
