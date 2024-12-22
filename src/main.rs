@@ -9,6 +9,7 @@ use std::{
     collections::HashSet,
     env,
     fs::{self, create_dir, read_dir},
+    path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result};
@@ -32,10 +33,11 @@ fn display_link(text: &str, url: &str) -> String {
     format!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", url, text)
 }
 
-async fn run(_args: &Args) -> Result<()> {
+async fn run(_args: &Args, root: &Path) -> Result<()> {
     println!();
 
-    let config_path = env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
+    let config_path = root.join(CONFIG_ROOT);
+    // let config_path = env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
@@ -334,6 +336,8 @@ async fn main() -> Result<()> {
     let _command_name = args.next();
     let subcommand = args.next().unwrap_or_default();
 
+    let root: PathBuf = git(&["rev-parse", "--show-toplevel"])?.into();
+
     let mut args: Args = args.collect();
 
     if subcommand.starts_with("-") {
@@ -350,7 +354,7 @@ async fn main() -> Result<()> {
         match subcommand.as_str() {
             // main commands
             "init" => init(&args)?,
-            "run" => run(&args).await?,
+            "run" => run(&args, &root).await?,
             "gen-patch" => gen_patch(&args)?,
             // lower level commands
             "pr-fetch" => pr_fetch(&args)?,
