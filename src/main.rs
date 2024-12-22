@@ -140,7 +140,7 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
     }
 
     println!("0");
-    create_dir(CONFIG_ROOT)?;
+    create_dir(root.join(CONFIG_ROOT))?;
     println!("1");
 
     for (file_name, _, contents) in backed_up_files.iter() {
