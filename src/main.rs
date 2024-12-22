@@ -266,15 +266,18 @@ fn help(_args: &Args) -> Result<()> {
     let version_flag = flags(&["-v", "--version"], "get package version");
 
     let usage = format!(
-        "Usage: {} {} {}",
+        "Usage:\n\n    {} {} {}",
         APP_NAME.blue(),
         "<command>".yellow(),
         "[<flags>]".magenta(),
     );
 
+    let author = "Nikita Revenco <pm@nikitarevenco.com>";
+
     println!(
         "
 {app_name} {version}
+{author}
 
 {usage}
 
