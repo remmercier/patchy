@@ -383,7 +383,7 @@ pub async fn fetch_pull_request(
 ) -> anyhow::Result<(GitHubResponse, BranchAndRemote)> {
     let response = make_request(
         client,
-        &format!("ettps://api.github.com/repos/{}/pulls/{pull_request}", repo),
+        &format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo),
     )
     .await
     .context(format!(
