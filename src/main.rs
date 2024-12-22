@@ -73,7 +73,6 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
 
     checkout(&local_branch, &local_remote)?;
 
-    println!("1");
     let client = reqwest::Client::new();
 
     // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads
@@ -98,7 +97,6 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
         let local_remote = with_uuid(&response.head.r#ref);
         let remote_branch = &response.head.r#ref;
         let local_branch = with_uuid(remote_branch);
-        println!("2");
 
         if let Err(err) = async {
             add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
@@ -126,7 +124,6 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
             );
             println!("{success_message}")
         }
-        println!("3");
 
         let has_unstaged_changes = git(&["diff", "--cached", "--quiet"]).is_err();
 
@@ -137,18 +134,17 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
                 &format!("{APP_NAME}: Merge branch {remote_branch} of {remote_remote}"),
             ])?;
         }
-        println!("4");
 
         git(&["remote", "remove", &local_remote])?;
         git(&["branch", "--delete", "--force", &local_branch])?;
     }
 
+    println!("0");
     create_dir(CONFIG_ROOT)?;
+    println!("1");
 
     for (file_name, _, contents) in backed_up_files.iter() {
-        println!("1");
         restore_backup(file_name, contents).context("Could not restore backups")?;
-        println!("2");
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
