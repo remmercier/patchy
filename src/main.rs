@@ -209,8 +209,8 @@ async fn main() -> Result<()> {
             config.local_branch.blue()
         );
         println!(
-            "  {} You can still manually overwrite {} with the following command:\n{command}\n",
-            "Info:".bold(),
+            "\n  {} You can still manually overwrite {} with the following command:\n{command}\n",
+            "Info:".bright_blue().bold(),
             config.local_branch.blue()
         )
     }
