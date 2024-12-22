@@ -9,25 +9,25 @@ use tempfile::tempfile;
 
 use crate::CONFIG_ROOT;
 
-pub fn backup_files(config_files: ReadDir) -> Vec<(OsString, File, String)> {
-    config_files
-        .filter_map(|config_file| {
-            if let Ok(config_file) = config_file {
-                let mut destination_backed_up = tempfile().unwrap();
-                let contents = read_to_string(config_file.path()).unwrap();
-                let filename = config_file.file_name();
-                if write!(destination_backed_up, "{contents}").is_ok() {
-                    Some((filename, destination_backed_up, contents))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        .collect()
-}
+pub fn backup_files(config_files: ReadDir) -> anyhow::Result<Vec<(OsString, File, String)>> {
+    let mut backups = Vec::new();
 
+    for entry in config_files {
+        let config_file = entry?;
+
+        let path = config_file.path();
+        let contents = read_to_string(&path)?;
+
+        let filename = config_file.file_name();
+        let mut destination_backed_up = tempfile()?;
+
+        write!(destination_backed_up, "{contents}")?;
+
+        backups.push((filename, destination_backed_up, contents));
+    }
+
+    Ok(backups)
+}
 pub fn restore_backup(file_name: &OsString, contents: &str) -> anyhow::Result<()> {
     let path = PathBuf::from(CONFIG_ROOT).join(file_name);
     let mut file = File::create(&path)?;

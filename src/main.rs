@@ -35,30 +35,26 @@ async fn main() -> Result<()> {
         "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
-    let config_files = read_dir(config_path).context(error!("Could not read directory"))?;
+    let config_files = read_dir(&config_path).context(error!(
+        "Could not read files in directory {:?}",
+        &config_path
+    ))?;
 
-    let backed_up_files = backup_files(config_files);
+    let backed_up_files =
+        backup_files(config_files).context(error!("Could not {APP_NAME} configuration files"))?;
 
     let local_main_temp_remote = with_uuid(&config.repo);
 
     let repo_link = format!("https://github.com/{}.git", config.repo);
 
-    git(&["remote", "add", &local_main_temp_remote, &repo_link]).context(error!(
-        "Failed to add remote repository {} from {repo_link}",
-        config.repo
-    ))?;
-
     let local_main_temp_branch = with_uuid(&config.remote_branch);
 
-    git(&[
-        "fetch",
+    add_remote_branch(
         &local_main_temp_remote,
-        &format!("{}:{local_main_temp_branch}", config.remote_branch),
-    ])
-    .context(error!(
-        "Failed to fetch branch {} from remote {}",
-        config.remote_branch, repo_link
-    ))?;
+        &local_main_temp_branch,
+        &repo_link,
+        &config.remote_branch,
+    )?;
 
     git(&["checkout", &local_main_temp_branch])
         .context(error!("Unable to checkout branch {}", config.remote_branch))?;
@@ -79,7 +75,10 @@ async fn main() -> Result<()> {
         let response = match handle_request(request).await {
             Ok(response) => response,
             Err(err) => {
-                eprintln!("An error has occured: {err}");
+                let error_message = error!(
+                "Could fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}",
+            );
+                eprintln!("{error_message}");
                 continue;
             }
         };
@@ -96,19 +95,21 @@ async fn main() -> Result<()> {
         }
         .await
         {
-            eprintln!("An error has occured: {err}");
+            let error_message = error!(
+                "Could not merge remote branch from pull request #{pull_request}, skipping.\n{err}",
+            );
+            eprintln!("{error_message}");
             continue;
+        } else {
+            let success_message = success!("Merged pull request #{pull_request}");
+            println!("{success_message}")
         }
 
-        if git(&["diff", "--cached", "--quiet"]).is_ok() {
-            println!("No changes to commit after merging");
-        } else {
+        if git(&["diff", "--cached", "--quiet"]).is_err() {
             git(&[
                 "commit",
                 "--message",
-                &format!(
-                "{APP_NAME}: Merge branch {remote_branch} of {remote_remote} [resolved conflicts]"
-            ),
+                &format!("{APP_NAME}: Merge branch {remote_branch} of {remote_remote}"),
             ])?;
         }
 
@@ -135,7 +136,7 @@ async fn main() -> Result<()> {
     create_dir(CONFIG_ROOT)?;
 
     for (file_name, _, contents) in backed_up_files.iter() {
-        restore_backup(file_name, contents).context("Could not restore backups")?;
+        restore_backup(file_name, contents).context(error!("Could not restore backups"))?;
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
@@ -146,7 +147,10 @@ async fn main() -> Result<()> {
                     "--keep-cr",
                     "--signoff",
                     &format!("{CONFIG_ROOT}/{file_name}"),
-                ])?;
+                ])
+                .context(error!("Could not apply patch {file_name}, skipping"))?;
+                let success_message = success!("Applied patch {file_name}");
+                println!("{success_message}")
             }
         }
     }

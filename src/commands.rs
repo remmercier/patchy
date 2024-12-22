@@ -1,3 +1,6 @@
+use crate::error;
+use colored::Colorize;
+
 pub fn git(args: &[&str]) -> anyhow::Result<String> {
     let current_dir = std::env::current_dir()?;
 
@@ -35,14 +38,14 @@ pub fn add_remote_branch(
             Ok(_) => Ok(()),
             Err(err) => {
                 git(&["branch", "-D", local_branch])?;
-                Err(anyhow::anyhow!(
-                    "Could not fetch branch for pull request: {err}"
-                ))
+                Err(anyhow::anyhow!(error!(
+                    "Could not fetch branch from remote: {err}"
+                )))
             }
         },
         Err(err) => {
             git(&["remote", "remove", local_remote])?;
-            Err(anyhow::anyhow!("Could not add remote: {err}"))
+            Err(anyhow::anyhow!(error!("Could not add remote: {err}")))
         }
     }
 }
