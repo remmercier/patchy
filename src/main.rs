@@ -14,9 +14,9 @@ use std::{
 
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
-use commands::batch_git_processes;
-use commands::merge_into_main;
-use commands::{add_remote_branch, checkout, get_git_root, spawn_git_command};
+use commands::{
+    add_remote_branch, checkout, get_git_output, get_git_root, merge_into_main, spawn_git,
+};
 use types::Configuration;
 use utils::{make_request, with_uuid};
 
@@ -349,11 +349,8 @@ async fn main() -> Result<()> {
 
     let root = get_git_root()?;
 
-    let git = |args: &[&str]| -> anyhow::Result<String> {
-        batch_git_processes(vec![spawn_git_command(args, &root)?], args)
-            .into_iter()
-            .collect()
-    };
+    let git =
+        |args: &[&str]| -> anyhow::Result<String> { get_git_output(spawn_git(args, &root)?, args) };
 
     let mut args: Args = args.collect();
 
