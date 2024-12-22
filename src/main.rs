@@ -5,6 +5,7 @@ mod utils;
 
 use colored::Colorize;
 use std::fs::{create_dir, read_dir};
+use tokio::task;
 
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
@@ -65,68 +66,89 @@ async fn main() -> Result<()> {
 
     let client = reqwest::Client::new();
 
-    for pull_request in config.pull_requests.iter() {
-        let response = match make_request(
-            &client,
-            &format!(
-                "https://api.github.com/repos/{}/pulls/{pull_request}",
-                config.repo
-            ),
-        )
-        .await
-        {
-            Ok(response) => response,
-            Err(err) => {
-                eprintln!("Couldn't fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}");
-                continue;
-            }
-        };
+    let futures = config.pull_requests.iter().map(|pull_request| {
+        let client = client.clone();
+        let config_repo = config.repo.clone();
+        let pull_request = pull_request.clone();
 
-        let remote_remote = &response.head.repo.clone_url;
-        let local_remote = with_uuid(&response.head.r#ref);
-        let remote_branch = &response.head.r#ref;
-        let local_branch = with_uuid(remote_branch);
-
-        if let Err(err) = async {
-            add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
-            merge_into_main(&local_branch, remote_branch)?;
-            Ok::<(), anyhow::Error>(())
-        }
-        .await
-        {
-            eprintln!(
-                "Couldn't merge remote branch from pull request #{pull_request}, skipping.\n{err}"
-            );
-            continue;
-        } else {
-            let success_message = success!(
-                "Merged pull request {}",
-                display_link(
-                    &format!(
-                        "{}{} {}",
-                        "#".bright_blue(),
-                        pull_request.bright_blue(),
-                        response.title.blue().italic()
-                    ),
-                    &response.html_url
+        task::spawn(async move {
+            let response = match make_request(
+                &client,
+                &format!(
+                    "https://api.github.com/repos/{}/pulls/{}",
+                    config_repo, pull_request
                 ),
-            );
-            println!("{success_message}")
-        }
+            )
+            .await
+            {
+                Ok(response) => response,
+                Err(err) => {
+                    eprintln!(
+                        "Couldn't fetch required data from remote, skipping. #{}. Skipping.\n{err}",
+                        pull_request
+                    );
+                    return;
+                }
+            };
 
-        let has_unstaged_changes = git(&["diff", "--cached", "--quiet"]).is_err();
+            let remote_remote = &response.head.repo.clone_url;
+            let local_remote = with_uuid(&response.head.r#ref);
+            let remote_branch = &response.head.r#ref;
+            let local_branch = with_uuid(remote_branch);
 
-        if has_unstaged_changes {
-            git(&[
-                "commit",
-                "--message",
-                &format!("{APP_NAME}: Merge branch {remote_branch} of {remote_remote}"),
-            ])?;
-        }
+            if let Err(err) = async {
+                add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
+                merge_into_main(&local_branch, remote_branch)?;
+                Ok::<(), anyhow::Error>(())
+            }
+            .await
+            {
+                eprintln!(
+                    "Couldn't merge remote branch from pull request #{}. Skipping.\n{err}",
+                    pull_request
+                );
+                return;
+            } else {
+                let success_message = success!(
+                    "Merged pull request {}",
+                    display_link(
+                        &format!(
+                            "{}{} {}",
+                            "#".bright_blue(),
+                            pull_request.bright_blue(),
+                            response.title.blue().italic()
+                        ),
+                        &response.html_url
+                    ),
+                );
+                println!("{success_message}")
+            }
 
-        git(&["remote", "remove", &local_remote])?;
-        git(&["branch", "-D", &local_branch])?;
-    }
+            // Commit changes if necessary
+            let has_unstaged_changes = git(&["diff", "--cached", "--quiet"]).is_err();
+
+            if has_unstaged_changes {
+                if let Err(err) = git(&[
+                    "commit",
+                    "--message",
+                    &format!("{APP_NAME}: Merge branch {remote_branch} of {remote_remote}"),
+                ]) {
+                    eprintln!("Failed to commit changes: {err}");
+                }
+            }
+
+            // Clean up
+            if let Err(err) = git(&["remote", "remove", &local_remote]) {
+                eprintln!("Failed to remove remote {local_remote}: {err}");
+            }
+
+            if let Err(err) = git(&["branch", "-D", &local_branch]) {
+                eprintln!("Failed to delete branch {local_branch}: {err}");
+            }
+        })
+    });
+
+    futures::future::join_all(futures).await;
 
     let temporary_branch = with_uuid("temp-branch");
 
