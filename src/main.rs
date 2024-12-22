@@ -183,7 +183,8 @@ async fn main() -> Result<()> {
 
     let confirmation = Confirm::new()
         .with_prompt(format!(
-            "\nOverwrite branch {}? This is irreversible.",
+            "\n  {} Overwrite branch {}? This is irreversible.",
+            "»".black(),
             config.local_branch.blue()
         ))
         .interact()
@@ -201,13 +202,14 @@ async fn main() -> Result<()> {
         ])?;
     } else {
         let command = format!(
-            "{} {} {}",
+            "\n    {} {} {}\n",
             "git branch --move --force".blue(),
             temporary_branch.blue(),
             config.local_branch.blue()
         );
         println!(
-            "You can still manually overwrite {} with the following command:\n{command}\n",
+            "  {} You can still manually overwrite {} with the following command:\n{command}\n",
+            "Info:".bold(),
             config.local_branch.blue()
         )
     }
