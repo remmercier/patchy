@@ -6,6 +6,7 @@ mod utils;
 use colored::Colorize;
 use dialoguer::Confirm;
 use std::{
+    collections::HashSet,
     env,
     fs::{self, create_dir, read_dir},
 };
@@ -31,7 +32,7 @@ fn display_link(text: &str, url: &str) -> String {
     format!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", url, text)
 }
 
-async fn run() -> Result<()> {
+async fn run(_args: Args) -> Result<()> {
     let config_path = env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
@@ -220,16 +221,46 @@ async fn run() -> Result<()> {
     Ok(())
 }
 
-fn help() -> Result<()> {
-    println!("Help:");
+type Args = HashSet<String>;
+
+fn help(_args: Args) -> Result<()> {
+    fn subcommand(command: &str, description: &str) -> String {
+        format!("{command}{}{description}", " ".repeat(14 - command.len()))
+    }
+    let init = subcommand("init", "Create example config file");
+    let pr_fetch = subcommand(
+        "pr-fetch",
+        "Fetch pull request for a GitHub repository as a local branch",
+    );
+    let gen_patch = subcommand("gen-patch", "Generate a .patch file from a commit hash");
+    let run = subcommand("run", &format!("Start {APP_NAME}"));
+    let version = env!("CARGO_PKG_VERSION");
+    let app_name = env!("CARGO_PKG_NAME");
+
+    println!(
+        "\
+{app_name} {version}
+
+Usage: {APP_NAME}
+
+    {init} 
+    {pr_fetch} 
+    {gen_patch} 
+    {run}
+"
+    );
     Ok(())
 }
 
-fn init() -> Result<()> {
+fn init(_args: Args) -> Result<()> {
     Ok(())
 }
 
-fn gen_patch() -> Result<()> {
+fn gen_patch(_args: Args) -> Result<()> {
+    Ok(())
+}
+
+fn pr_fetch(_args: Args) -> Result<()> {
     Ok(())
 }
 
@@ -238,14 +269,18 @@ async fn main() -> Result<()> {
     println!();
 
     let mut args = env::args();
-
-    let _command = args.next();
+    let _command_name = args.next();
     let subcommand = args.next().unwrap_or_default();
 
+    let args: Args = args.collect();
+
     match subcommand.as_str() {
-        "run" => run().await,
-        "gen-patch" => gen_patch(),
-        "init" => init(),
-        _ => help(),
+        // main commands
+        "init" => init(args),
+        "run" => run(args).await,
+        "gen-patch" => gen_patch(args),
+        // lower level commands
+        "pr-fetch" => pr_fetch(args),
+        _ => help(args),
     }
 }
