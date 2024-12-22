@@ -24,16 +24,9 @@ macro_rules! success {
 }
 
 #[macro_export]
-macro_rules! info {
-    ($($arg:tt)*) => {{
-        println!("{INDENT}{}{}", "i ".bright_blue().bold(), format!($($arg)*))
-    }};
-}
-
-#[macro_export]
 macro_rules! fail {
     ($($arg:tt)*) => {{
-        eprintln!("{INDENT}{}{}", "i ".bright_red().bold(), format!($($arg)*))
+        eprintln!("{INDENT}{}{}", "✗ ".bright_red().bold(), format!($($arg)*))
     }};
 }
 
