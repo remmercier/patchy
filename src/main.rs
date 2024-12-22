@@ -185,7 +185,7 @@ async fn main() -> Result<()> {
 
     let confirmation = Confirm::new()
         .with_prompt(format!(
-            "\n    {} Overwrite branch {}? This is irreversible.",
+            "\n{INDENT}{} Overwrite branch {}? This is irreversible.",
             "»".black(),
             config.local_branch.cyan()
         ))
