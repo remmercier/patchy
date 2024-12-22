@@ -183,7 +183,7 @@ async fn main() -> Result<()> {
 
     let confirmation = Confirm::new()
         .with_prompt(format!(
-            "\n  {} Overwrite branch {}? This is irreversible.",
+            "\n    {} Overwrite branch {}? This is irreversible.",
             "»".black(),
             config.local_branch.blue()
         ))
@@ -200,7 +200,7 @@ async fn main() -> Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
-        println!("\n    {}", "Success!".green().bold());
+        println!("\n      {}", "Success!".green().bold());
     } else {
         let command = format!(
             "\n    {} {} {}\n",
