@@ -200,6 +200,7 @@ async fn main() -> Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
+        println!("{}", "Success".blue());
     } else {
         let command = format!(
             "\n    {} {} {}\n",
