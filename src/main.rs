@@ -229,10 +229,16 @@ fn help(_args: &Args) -> Result<()> {
     let version = env!("CARGO_PKG_VERSION");
     let app_name = env!("CARGO_PKG_NAME");
     fn subcommand(command: &str, args: &str, description: &str) -> String {
-        let command = command.blue();
-        let args = args.yellow();
+        let command = command.yellow();
+        let args = args.green();
         format!("{command}{args}\n    {} {description}", "»".black())
     }
+
+    // fn example(command: &str) -> String {
+    //     let command = command.blue();
+    //     let args = args.yellow();
+    //     format!("{command}{args}\n    {} {description}", "»".black())
+    // }
 
     fn flags(flags: &[&str; 2], description: &str) -> String {
         let flags: Vec<_> = flags.iter().map(|flag| flag.magenta()).collect();
@@ -266,15 +272,22 @@ fn help(_args: &Args) -> Result<()> {
     let version_flag = flags(&["-v", "--version"], "get package version");
 
     let usage = format!(
-        "  Usage:\n\n    {} {} {}",
+        "  Usage:\n\n    {} {} {} {}",
         APP_NAME.blue(),
-        "<command>".yellow(),
         "[<flags>]".magenta(),
+        "<command>".yellow(),
+        "[<args>]".green(),
     );
 
     let app_name = app_name.blue();
 
-    let author = "  Nikita Revenco <pm@nikitarevenco.com>";
+    let author = format!(
+        "{}{}{}{}",
+        "  Nikita Revenco ".italic(),
+        "<".black().italic(),
+        "pm@nikitarevenco.com".italic(),
+        ">".black().italic()
+    );
 
     println!(
         "
