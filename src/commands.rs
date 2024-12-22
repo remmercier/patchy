@@ -279,6 +279,20 @@ pub fn init(_args: &CommandArgs, root: &path::Path) -> anyhow::Result<()> {
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
+    if config_file_path.exists() {
+        let confirmation = Confirm::new()
+            .with_prompt(format!(
+                "\n{INDENT}{} File {:?} already exists. Overwrite it?",
+                "»".black(),
+                config_file_path.to_string_lossy().blue()
+            ))
+            .interact()
+            .unwrap();
+        if !confirmation {
+            anyhow::bail!("Did not overwrite it {config_file_path:?}.");
+        }
+    }
+
     let _ = fs::create_dir(config_path);
 
     let mut file = File::create(&config_file_path)?;
