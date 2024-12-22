@@ -8,7 +8,7 @@ use colored::Colorize;
 use std::fs::{create_dir, read_dir};
 
 // use crate::log as other_log;
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
 use commands::{add_remote_branch, git, merge_into_main};
 use reqwest::header::USER_AGENT;
