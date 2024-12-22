@@ -125,7 +125,7 @@ pub async fn run(
         git(&["branch", "--delete", "--force", &local_branch])?;
     }
 
-    if let Err(err) = fs::create_dir(root.join(CONFIG_ROOT)) {
+    if let Err(err) = fs::create_dir(root) {
         git(&["remote", "remove", &local_remote])?;
         git(&["branch", "--delete", "--force", &local_branch])?;
         return Err(anyhow::anyhow!(err));
