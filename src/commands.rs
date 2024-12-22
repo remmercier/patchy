@@ -86,13 +86,13 @@ pub async fn run(
                         );
                     }
                     Err(err) => {
-                        eprintln!("{:?}", err);
+                        eprintln!("{err:#?}");
                         continue;
                     }
                 };
             }
             Err(err) => {
-                eprintln!("{:?}", err);
+                eprintln!("{err:#?}");
                 continue;
             }
         }
@@ -306,7 +306,7 @@ pub async fn pr_fetch(
                 );
             }
             Err(err) => {
-                eprintln!("{err}");
+                eprintln!("{err:#?}");
                 continue;
             }
         };
@@ -325,12 +325,12 @@ pub struct Remote {
     remote_name: String,
 }
 
-pub struct Information {
+pub struct BranchAndRemote {
     branch: Branch,
     remote: Remote,
 }
 
-impl Information {
+impl BranchAndRemote {
     pub fn new(
         local_branch: &str,
         remote_branch: &str,
@@ -350,7 +350,7 @@ impl Information {
 }
 
 pub async fn merge_pull_request(
-    info: Information,
+    info: BranchAndRemote,
     git: &impl Fn(&[&str]) -> anyhow::Result<String>,
 ) -> anyhow::Result<()> {
     merge_into_main(&info.branch.local_name, &info.branch.remote_name).context(
@@ -376,13 +376,11 @@ pub async fn merge_pull_request(
     Ok(())
 }
 
-/// On success, returns:
-/// (Title of the pull request, Link to the pull request)
 pub async fn fetch_pull_request(
     repo: &str,
     pull_request: &str,
     client: &Client,
-) -> anyhow::Result<(GitHubResponse, Information)> {
+) -> anyhow::Result<(GitHubResponse, BranchAndRemote)> {
     let response = make_request(
         client,
         &format!("ettps://api.github.com/repos/{}/pulls/{pull_request}", repo),
@@ -390,9 +388,7 @@ pub async fn fetch_pull_request(
     .await
     .context(format!(
         "Couldn't fetch required data from remote, skipping. #{pull_request}, skipping."
-    ))
-    .context("1")
-    .context("2")?;
+    ))?;
 
     let remote_remote = &response.head.repo.clone_url;
 
@@ -414,7 +410,7 @@ pub async fn fetch_pull_request(
         format!("Could not add remove branch for pull request #{pull_request}, skipping"),
     )?;
 
-    let info = Information::new(&local_branch, remote_branch, &local_remote, remote_remote);
+    let info = BranchAndRemote::new(&local_branch, remote_branch, &local_remote, remote_remote);
 
     Ok((response, info))
 }
