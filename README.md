@@ -1,24 +1,24 @@
 # gpatch
 
-`gpatch` makes life simple when you just want to use a repository with some of the pull requests from that repository merged into your personal fork. A "Pull-Request Shopping", if you will.
+`gpatch` makes life simple when you just want to use a repository with some of the pull requests from that repository merged into your personal fork.
+
+Let's go on a pull request shopping spree together!
 
 ## Why should I use it?
 
-- Merge multiple pull requests and commits into a single repository effortlessly
-- Sync those pull requests and the main remote easily
-- Edit a simple toml config file to add new pull requests or remove existing ones, update with a single command
+- Merge multiple pull requests and commits into a single repo effortlessly
+- Sync those pull requests and the main branch with a single command
+- Add new pull requests and update existing ones easily
 
 ## Usage
 
-Go to any git repository, and initialize the config file:
+Go to a git repo, and initialize the config file:
 
 ```sh
 gpatch init
 ```
 
-Invoke the `gpatch` by running the following command:
-
-<!-- TODO: make it run from anywhere within repository -->
+Invoke `gpatch` by running the following command:
 
 ```sh
 gpatch run
@@ -26,19 +26,22 @@ gpatch run
 
 ### Patches
 
+You might want to apply some changes to your repo, but it's not a pull request. No worries! `gpatch` is built for this.
+
 Create a patch from a commit:
 
 ```sh
+# obtain commit hashes e.g. from `git log`
 gpatch gen <hash-of-commit>
 ```
 
-For example, I ran:
+For example, I'm running:
 
 ```sh
 gpatch gen 7bb8ec5a77769d88855d41dd5fecfaece54cf471
 ```
 
-It generated the following file, `.gpatch/feat-swap-light-and-dark-colors.patch`:
+It generated a file, `.gpatch/feat-swap-light-and-dark-colors.patch`:
 
 ```patch
 diff --git a/README.md b/README.md
@@ -57,16 +60,14 @@ index 11a909b2..4eae6a8d 100644
  </h1>
 ```
 
-You can then use the `.patch` editing your TOML file like this:
+To use your new `.patch`, edit your config like so:
 
 ```diff
 --- patches = []
 +++ patcher = [ "feat-swap-light-and-dark-colors" ]
 ```
 
-This feature is handy when you want to have some special commits in your repository that you made yourself for example, but don't want to make a pull request for them.
-
-### Configuration
+### Config
 
 Generate the sample config:
 
@@ -92,7 +93,7 @@ local-branch = "gpatch"
 # List of pull requests which you would like to merge
 pull-requests = [ "12309", "11285", "8908", "11164" ]
 
-# An list of patches to apply (see below)
+# A list of patches to apply
 patches = []
 ```
 
