@@ -176,24 +176,15 @@ async fn main() -> Result<()> {
 
     let temporary_branch = with_uuid("temp-branch");
 
-    let warning = format!(
-        "{} all contents on {} will be overwritten.",
-        "Warning: ".yellow().bold(),
-        config.local_branch.blue(),
-    );
-
-    let command = format!(
-        "{} {} {}",
-        "git branch --move --force".blue(),
-        temporary_branch.blue(),
-        config.local_branch.blue()
-    );
-
     git(&["switch", "--create", &temporary_branch])?;
+
+    git(&["remote", "remove", &local_remote])?;
+    git(&["branch", "--delete", "--force", &local_branch])?;
 
     let confirmation = Confirm::new()
         .with_prompt(format!(
-            "Almost done, would you like us to run this command for you?\n{command}\n{warning}",
+            "\nOverwrite branch {}? This is irreversible.",
+            config.local_branch.blue()
         ))
         .interact()
         .unwrap();
@@ -208,10 +199,17 @@ async fn main() -> Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
-
-        // clean up
-        git(&["remote", "remove", &local_remote])?;
-        git(&["branch", "--delete", "--force", &local_branch])?;
+    } else {
+        let command = format!(
+            "{} {} {}",
+            "git branch --move --force".blue(),
+            temporary_branch.blue(),
+            config.local_branch.blue()
+        );
+        println!(
+            "You can still manually overwrite {} with the following command:\n{command}\n",
+            config.local_branch.blue()
+        )
     }
 
     Ok(())
