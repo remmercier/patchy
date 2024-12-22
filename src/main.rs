@@ -30,7 +30,10 @@ fn display_link(text: &str, url: &str) -> String {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    git(&["rev-parse", "--is-inside-work-tree"]).context("Not in a git repository")?;
+    // git(&["rev-parse", "--is-inside-work-tree"]).context("Not in a git repository")?;
+    // if git(&["status", "--silent"])?.is_empty() {
+    //     let error_msg = error!("You have uncommited changes in the repository, please ")
+    // };
 
     let config_path = std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
