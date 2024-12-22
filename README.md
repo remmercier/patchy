@@ -60,7 +60,7 @@ index 11a909b2..4eae6a8d 100644
  </h1>
 ```
 
-To use your new `.patch`, edit your config like so:
+To use your new `.patch`, edit your `.gpatch/config.toml` like so:
 
 ```diff
 --- patches = []
