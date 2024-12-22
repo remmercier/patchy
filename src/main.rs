@@ -359,18 +359,18 @@ async fn main() -> Result<()> {
             // lower level commands
             "pr-fetch" => pr_fetch(&args)?,
             unrecognized => {
-                let unknown = if unrecognized.starts_with("-") {
-                    "flag".red()
-                } else {
-                    "command".red()
-                };
+                if !unrecognized.is_empty() {
+                    let unknown = if unrecognized.starts_with("-") {
+                        "flag".red()
+                    } else {
+                        "command".red()
+                    };
 
-                eprintln!(
-                    "  {}{unknown}{}{}",
-                    "Unknown ".red(),
-                    ": ".red(),
-                    unrecognized.red()
-                );
+                    let message = format!("  Unknown {unknown}: {}", unrecognized).red();
+
+                    eprintln!("{message}");
+                }
+
                 help(&args)?;
                 std::process::exit(1)
             }
