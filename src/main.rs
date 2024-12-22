@@ -4,11 +4,8 @@ mod types;
 mod utils;
 
 use colored::Colorize;
-use std::{
-    fs::{create_dir, read_dir},
-    sync::Arc,
-};
-use tokio::{sync::Semaphore, task};
+use std::fs::{create_dir, read_dir};
+use tokio::task;
 
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
@@ -68,17 +65,13 @@ async fn main() -> Result<()> {
     checkout(&local_branch, &local_remote)?;
 
     let client = reqwest::Client::new();
-    let semaphore = Arc::new(Semaphore::new(3));
 
     let futures = config.pull_requests.iter().map(|pull_request| {
         let client = client.clone();
         let config_repo = config.repo.clone();
         let pull_request = pull_request.clone();
-        let semaphore = semaphore.clone();
 
         task::spawn(async move {
-            let _permit = semaphore.acquire().await;
-
             let response = match make_request(
                 &client,
                 &format!(
