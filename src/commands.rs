@@ -232,7 +232,7 @@ pub fn help(_args: &CommandArgs) -> anyhow::Result<()> {
 
   Usage:
 
-      {app_name} {flags} {command} {args}
+    {app_name} {flags} {command} {args}
 
   Commands:
 
@@ -262,12 +262,12 @@ pub fn help(_args: &CommandArgs) -> anyhow::Result<()> {
         init = subcommand("init", "", "Create example config file"),
         pr_fetch = subcommand(
             "pr-fetch",
-            " <repo-link> <pr-number>",
+            " <repo-link> <pr-numbers>...",
             "Fetch pull request for a GitHub repository as a local branch",
         ),
         gen_patch = subcommand(
             "gen-patch",
-            " <commit-hash>...",
+            " <commit-hashes>...",
             "Generate a .patch file from commit hashes",
         ),
         run = subcommand("run", "", &format!("Start {APP_NAME}")),
