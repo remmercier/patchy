@@ -10,6 +10,7 @@ use crate::{
 use anyhow::Context;
 use colored::Colorize;
 use dialoguer::Confirm;
+use reqwest::Client;
 
 macro_rules! success {
     ($($arg:tt)*) => {{
@@ -63,66 +64,10 @@ pub async fn run(
 
     // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads
     for pull_request in config.pull_requests.iter() {
-        let response = match make_request(
-            &client,
-            &format!(
-                "https://api.github.com/repos/{}/pulls/{pull_request}",
-                config.repo
-            ),
-        )
-        .await
-        {
-            Ok(response) => response,
-            Err(err) => {
-                eprintln!("Couldn't fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}");
-                continue;
-            }
-        };
-
-        let remote_remote = &response.head.repo.clone_url;
-        let local_remote = with_uuid(&response.head.r#ref);
-        let remote_branch = &response.head.r#ref;
-        let local_branch = with_uuid(remote_branch);
-
-        if let Err(err) = async {
-            add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
-            merge_into_main(&local_branch, remote_branch)?;
-            Ok::<(), anyhow::Error>(())
-        }
-        .await
-        {
-            eprintln!(
-                "Couldn't merge remote branch from pull request #{pull_request}, skipping.\n{err}"
-            );
+        if let Err(err) = pr_fetch(&config.repo, pull_request, &client, &git).await {
+            eprintln!("{err}");
             continue;
-        } else {
-            let success_message = success!(
-                "Merged pull request {}",
-                display_link(
-                    &format!(
-                        "{}{} {}",
-                        "#".bright_blue(),
-                        pull_request.bright_blue(),
-                        response.title.blue().italic()
-                    ),
-                    &response.html_url
-                ),
-            );
-            println!("{success_message}")
-        }
-
-        let has_unstaged_changes = git(&["diff", "--cached", "--quiet"]).is_err();
-
-        if has_unstaged_changes {
-            git(&[
-                "commit",
-                "--message",
-                &format!("{APP_NAME}: Merge branch {remote_branch} of {remote_remote}"),
-            ])?;
-        }
-
-        git(&["remote", "remove", &local_remote])?;
-        git(&["branch", "--delete", "--force", &local_branch])?;
+        };
     }
 
     if let Err(err) = fs::create_dir(root.join(CONFIG_ROOT)) {
@@ -303,6 +248,60 @@ pub fn gen_patch(_args: &CommandArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn pr_fetch(_args: &CommandArgs) -> anyhow::Result<()> {
+pub async fn pr_fetch(
+    repo: &str,
+    pull_request: &str,
+    client: &Client,
+    git: &impl Fn(&[&str]) -> anyhow::Result<String>,
+) -> anyhow::Result<()> {
+    let response = make_request(
+        &client,
+        &format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo),
+    )
+    .await
+    .context(
+        "Couldn't fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}",
+    )?;
+
+    let remote_remote = &response.head.repo.clone_url;
+    let local_remote = with_uuid(&response.head.r#ref);
+    let remote_branch = &response.head.r#ref;
+    let local_branch = with_uuid(remote_branch);
+
+    add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)
+        .context("Could not add remove branch for pull request #{pull_request}, skipping")?;
+    merge_into_main(&local_branch, remote_branch).context(
+        "Could not merge branch into the current branch for pull request #{pull_request}, skipping",
+    )?;
+
+    println!(
+        "{}",
+        success!(
+            "Merged pull request {}",
+            display_link(
+                &format!(
+                    "{}{} {}",
+                    "#".bright_blue(),
+                    pull_request.bright_blue(),
+                    response.title.blue().italic()
+                ),
+                &response.html_url
+            ),
+        )
+    );
+
+    let has_unstaged_changes = git(&["diff", "--cached", "--quiet"]).is_err();
+
+    if has_unstaged_changes {
+        git(&[
+            "commit",
+            "--message",
+            &format!("{APP_NAME}: Merge branch {remote_branch} of {remote_remote}"),
+        ])?;
+    }
+
+    git(&["remote", "remove", &local_remote])?;
+    git(&["branch", "--delete", "--force", &local_branch])?;
+
     Ok(())
 }
