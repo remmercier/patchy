@@ -225,6 +225,14 @@ fn help() -> Result<()> {
     Ok(())
 }
 
+fn init() -> Result<()> {
+    Ok(())
+}
+
+fn gen_patch() -> Result<()> {
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     println!();
@@ -236,6 +244,8 @@ async fn main() -> Result<()> {
 
     match subcommand.as_str() {
         "run" => run().await,
+        "gen-patch" => gen_patch(),
+        "init" => init(),
         _ => help(),
     }
 }
