@@ -139,9 +139,7 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
         git(&["branch", "--delete", "--force", &local_branch])?;
     }
 
-    println!("0");
     create_dir(root.join(CONFIG_ROOT))?;
-    println!("1");
 
     for (file_name, _, contents) in backed_up_files.iter() {
         restore_backup(file_name, contents).context("Could not restore backups")?;
@@ -158,7 +156,10 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
                     "am",
                     "--keep-cr",
                     "--signoff",
-                    &format!("{CONFIG_ROOT}/{file_name}.patch"),
+                    &format!(
+                        "{}/{file_name}.patch",
+                        root.join(CONFIG_ROOT).to_str().unwrap_or_default()
+                    ),
                 ])
                 .context(format!("Could not apply patch {file_name}, skipping"))?;
 
