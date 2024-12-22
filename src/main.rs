@@ -161,7 +161,11 @@ async fn main() -> Result<()> {
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
-            let file_name = file_name.to_str().unwrap();
+            let file_name = file_name
+                .to_str()
+                .and_then(|s| s.get(0..s.len() - 6))
+                .unwrap_or_default();
+
             if patches.contains(file_name) {
                 git(&[
                     "am",
