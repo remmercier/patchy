@@ -1,6 +1,6 @@
-# gpatch
+# patchy
 
-`gpatch` makes life simple when you just want to use a repository with some of the pull requests from that repository merged into your personal fork.
+`patchy` makes life simple when you just want to use a repository with some of the pull requests from that repository merged into your personal fork.
 
 Let's go on a pull request shopping spree together!
 
@@ -15,33 +15,33 @@ Let's go on a pull request shopping spree together!
 Go to a git repo, and initialize the config file:
 
 ```sh
-gpatch init
+patchy init
 ```
 
-Invoke `gpatch` by running the following command:
+Invoke `patchy` by running the following command:
 
 ```sh
-gpatch run
+patchy run
 ```
 
 ### Patches
 
-You might want to apply some changes to your repo, but it's not a pull request. No worries! `gpatch` is built for this.
+You might want to apply some changes to your repo, but it's not a pull request. No worries! `patchy` is built for this.
 
 Create a patch from a commit:
 
 ```sh
 # obtain commit hashes e.g. from `git log`
-gpatch gen-patch <hash-of-commit>
+patchy gen-patch <hash-of-commit>
 ```
 
 For example, I'm running:
 
 ```sh
-gpatch gen-patch 7bb8ec5a77769d88855d41dd5fecfaece54cf471
+patchy gen-patch 7bb8ec5a77769d88855d41dd5fecfaece54cf471
 ```
 
-It generated a file, `.gpatch/feat-swap-light-and-dark-colors.patch`:
+It generated a file, `.patchy/feat-swap-light-and-dark-colors.patch`:
 
 ```patch
 diff --git a/README.md b/README.md
@@ -60,7 +60,7 @@ index 11a909b2..4eae6a8d 100644
  </h1>
 ```
 
-To use your new `.patch`, edit your `.gpatch/config.toml` like so:
+To use your new `.patch`, edit your `.patchy/config.toml` like so:
 
 ```diff
 --- patches = []
@@ -72,7 +72,7 @@ To use your new `.patch`, edit your `.gpatch/config.toml` like so:
 Generate the sample config:
 
 ```sh
-gpatch init
+patchy init
 ```
 
 This is a real-world example, specifically I myself used it at some point. I'm using the [Helix Editor](https://github.com/helix-editor/helix) but there are some pull requests which add awesome features. I found myself very frequently doing the same tasks in order to sync the 4 pull requests I like to use.
@@ -86,9 +86,9 @@ repo = "helix-editor/helix"
 # the repository's branch
 remote-branch = "master"
 
-# This is the branch where you will see all result from gpatch's work. Set it to any branch you want.
+# This is the branch where you will see all result from patchy's work. Set it to any branch you want.
 # WARNING: Make sure you do not store any important work on this branch. It will be erased.
-local-branch = "gpatch"
+local-branch = "patchy"
 
 # List of pull requests which you would like to merge
 # TIP: Add comments above pull requests to help yourself understand which PRs do what
@@ -107,7 +107,7 @@ pull-requests = [
 patches = []
 ```
 
-With this, all I will need to do is run `gpatch` **from the root of the repository** and it will automatically update all of the pull requests and sync the master branch to the latest changes.
+With this, all I will need to do is run `patchy` **from the root of the repository** and it will automatically update all of the pull requests and sync the master branch to the latest changes.
 
 ## Installation
 
