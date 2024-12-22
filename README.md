@@ -93,21 +93,23 @@ local-branch = "patchy"
 # List of pull requests which you would like to merge
 # TIP: Add comments above pull requests to help yourself understand which PRs do what
 pull-requests = [
-   # syntax highlighting for nginx files
-   "12309",
-   # adds file explorer
-   "11285",
-   # global status line
-   "8908",
-   # command expansions
-   "11164"
+  # syntax highlighting for nginx files
+  "12309",
+  # adds file explorer
+  "11285",
+  # global status line
+  "8908",
+  # command expansions
+  "11164",
 ]
 
 # A list of patches to apply
-patches = []
+patches = ["remove-tab"]
 ```
 
-With this, all I will need to do is run `patchy` **from the root of the repository** and it will automatically update all of the pull requests and sync the master branch to the latest changes.
+Running `patchy run` outputs:
+
+With this, all I will need to do is run `patchy run` and it will automatically update all of the pull requests and sync the master branch to the latest changes.
 
 ## Installation
 

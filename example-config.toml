@@ -22,4 +22,4 @@ pull-requests = [
 ]
 
 # A list of patches to apply
-patches = ["remove-tab"]
+patches = []

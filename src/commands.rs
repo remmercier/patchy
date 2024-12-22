@@ -228,11 +228,11 @@ pub fn help(_args: &CommandArgs) -> anyhow::Result<()> {
 
     {init} 
 
-    {pr_fetch} 
+    {run}
 
     {gen_patch} 
 
-    {run}
+    {pr_fetch} 
 
   Flags:
 
