@@ -1,10 +1,13 @@
 mod backup;
 mod commands;
+mod log;
 mod types;
 mod utils;
 
+use colored::Colorize;
 use std::fs::{create_dir, read_dir};
 
+// use crate::log as other_log;
 use anyhow::{bail, Context, Result};
 use backup::{backup_files, restore_backup};
 use commands::{add_remote_branch, git, merge_into_main};
@@ -18,34 +21,32 @@ static APP_NAME: &str = "gitpatcher";
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    if git(&["rev-parse", "--is-inside-work-tree"]).is_err() {
-        bail!("Not in a git repository");
-    }
+    git(&["rev-parse", "--is-inside-work-tree"]).context(error!("Not in a git repository"))?;
 
     let config_path = std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
-    let config_raw = std::fs::read_to_string(config_file_path.clone()).context(format!(
+    let config_raw = std::fs::read_to_string(config_file_path.clone()).context(error!(
         "Could not find `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
-    let config = toml::from_str::<Configuration>(&config_raw).context(format!(
+    let config = toml::from_str::<Configuration>(&config_raw).context(error!(
         "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
-    let config_files = read_dir(config_path)?;
+    let config_files = read_dir(config_path).context(error!("Could not read directory"))?;
 
     let backed_up_files = backup_files(config_files);
 
     let local_main_temp_remote = with_uuid(&config.repo);
 
-    git(&[
-        "remote",
-        "add",
-        &local_main_temp_remote,
-        &format!("https://github.com/{}.git", config.repo),
-    ])?;
+    let repo_link = format!("https://github.com/{}.git", config.repo);
+
+    git(&["remote", "add", &local_main_temp_remote, &repo_link]).context(error!(
+        "Failed to add remote repository {} from {repo_link}",
+        config.repo
+    ))?;
 
     let local_main_temp_branch = with_uuid(&config.remote_branch);
 
@@ -53,9 +54,14 @@ async fn main() -> Result<()> {
         "fetch",
         &local_main_temp_remote,
         &format!("{}:{local_main_temp_branch}", config.remote_branch),
-    ])?;
+    ])
+    .context(error!(
+        "Failed to fetch branch {} from remote {}",
+        config.remote_branch, repo_link
+    ))?;
 
-    git(&["checkout", &local_main_temp_branch])?;
+    git(&["checkout", &local_main_temp_branch])
+        .context(error!("Unable to checkout branch {}", config.remote_branch))?;
 
     let client = reqwest::Client::new();
 
