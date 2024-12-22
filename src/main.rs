@@ -9,12 +9,14 @@ use std::{
     collections::HashSet,
     env,
     fs::{self, create_dir, read_dir},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
-use commands::{add_remote_branch, checkout, git, merge_into_main};
+use commands::{
+    add_remote_branch, checkout, get_git_output, get_git_root, merge_into_main, spawn_git,
+};
 use types::Configuration;
 use utils::{make_request, with_uuid};
 
@@ -33,7 +35,7 @@ fn display_link(text: &str, url: &str) -> String {
     format!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", url, text)
 }
 
-async fn run(_args: &Args, root: &Path) -> Result<()> {
+async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>) -> Result<()> {
     println!();
 
     let config_path = root.join(CONFIG_ROOT);
@@ -336,7 +338,10 @@ async fn main() -> Result<()> {
     let _command_name = args.next();
     let subcommand = args.next().unwrap_or_default();
 
-    let root: PathBuf = git(&["rev-parse", "--show-toplevel"])?.into();
+    let root = get_git_root()?;
+
+    let git =
+        |args: &[&str]| -> anyhow::Result<String> { get_git_output(spawn_git(args, &root)?, args) };
 
     let mut args: Args = args.collect();
 
@@ -354,7 +359,7 @@ async fn main() -> Result<()> {
         match subcommand.as_str() {
             // main commands
             "init" => init(&args)?,
-            "run" => run(&args, &root).await?,
+            "run" => run(&args, &root, &git).await?,
             "gen-patch" => gen_patch(&args)?,
             // lower level commands
             "pr-fetch" => pr_fetch(&args)?,

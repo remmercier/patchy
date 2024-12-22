@@ -1,11 +1,9 @@
-pub fn git(args: &[&str]) -> anyhow::Result<String> {
-    let current_dir = std::env::current_dir()?;
+use std::{
+    path::{Path, PathBuf},
+    process::Output,
+};
 
-    let output = std::process::Command::new("git")
-        .args(args)
-        .current_dir(current_dir)
-        .output()?;
-
+pub fn get_git_output(output: Output, args: &[&str]) -> anyhow::Result<String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout)
             .trim_end()
@@ -18,6 +16,28 @@ pub fn git(args: &[&str]) -> anyhow::Result<String> {
             String::from_utf8_lossy(&output.stderr),
         ))
     }
+}
+
+pub fn spawn_git(args: &[&str], git_dir: &Path) -> Result<Output, std::io::Error> {
+    std::process::Command::new("git")
+        .args(args)
+        .current_dir(git_dir)
+        .output()
+}
+
+pub fn get_git_root() -> anyhow::Result<PathBuf> {
+    let current_dir = std::env::current_dir()?;
+
+    let args = ["rev-parse", "--show-toplevel"];
+
+    let root = spawn_git(&args, &current_dir)?;
+
+    get_git_output(root, &args).map(|output| output.into())
+}
+
+pub fn git(args: &[&str]) -> anyhow::Result<String> {
+    let root = get_git_root()?;
+    get_git_output(spawn_git(args, &root)?, args)
 }
 
 pub fn add_remote_branch(
