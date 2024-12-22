@@ -125,11 +125,11 @@ pub async fn run(
         git(&["branch", "--delete", "--force", &local_branch])?;
     }
 
-    if let Err(err) = fs::create_dir(root) {
+    if let Err(err) = fs::create_dir(root.join(CONFIG_ROOT)) {
         git(&["checkout", &previous_branch])?;
         git(&["remote", "remove", &local_remote])?;
         git(&["branch", "--delete", "--force", &local_branch])?;
-        return Err(anyhow::anyhow!(err));
+        return Err(anyhow::anyhow!(err).context("Could not create directory {CONFIG_ROOT}"));
     };
 
     for (file_name, _file, contents) in backed_up_files.iter() {
