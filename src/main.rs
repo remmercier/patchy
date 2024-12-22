@@ -6,10 +6,9 @@ mod utils;
 use colored::Colorize;
 use std::fs::{create_dir, read_dir};
 
-// use crate::log as other_log;
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
-use commands::{add_remote_branch, git, merge_into_main};
+use commands::{add_remote_branch, checkout, git, merge_into_main};
 use reqwest::header::USER_AGENT;
 use types::Configuration;
 use utils::{handle_request, with_uuid};
@@ -30,11 +29,6 @@ fn display_link(text: &str, url: &str) -> String {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // git(&["rev-parse", "--is-inside-work-tree"]).context("Not in a git repository")?;
-    // if git(&["status", "--silent"])?.is_empty() {
-    //     let error_msg = error!("You have uncommited changes in the repository, please ")
-    // };
-
     let config_path = std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
@@ -68,10 +62,7 @@ async fn main() -> Result<()> {
         &config.remote_branch,
     )?;
 
-    git(&["checkout", &local_main_temp_branch]).context(format!(
-        "Unable to checkout branch {}",
-        config.remote_branch
-    ))?;
+    checkout(&local_main_temp_branch)?;
 
     let client = reqwest::Client::new();
 

@@ -45,6 +45,18 @@ pub fn add_remote_branch(
     }
 }
 
+pub fn checkout(branch: &str) -> anyhow::Result<()> {
+    match git(&["checkout", branch]) {
+        Ok(_) => Ok(()),
+        Err(err) => {
+            git(&["branch", "-D", branch])?;
+            Err(anyhow::anyhow!(
+                "Could not checkout branch: {branch}\n{err}"
+            ))
+        }
+    }
+}
+
 pub fn merge_into_main(
     local_branch: &str,
     remote_branch: &str,
