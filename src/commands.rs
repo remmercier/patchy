@@ -282,9 +282,9 @@ pub fn init(_args: &CommandArgs, root: &path::Path) -> anyhow::Result<()> {
     if config_file_path.exists() {
         let confirmation = Confirm::new()
             .with_prompt(format!(
-                "\n{INDENT}{} File {:?} already exists. Overwrite it?",
+                "\n{INDENT}{} File {config_file_path} already exists. Overwrite it?",
                 "»".black(),
-                config_file_path.to_string_lossy().blue()
+                config_file_path = config_file_path.to_string_lossy().blue()
             ))
             .interact()
             .unwrap();
