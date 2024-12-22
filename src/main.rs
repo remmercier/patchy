@@ -5,7 +5,10 @@ mod utils;
 
 use colored::Colorize;
 use dialoguer::Confirm;
-use std::fs::{create_dir, read_dir};
+use std::{
+    env,
+    fs::{self, create_dir, read_dir},
+};
 
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
@@ -28,14 +31,12 @@ fn display_link(text: &str, url: &str) -> String {
     format!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", url, text)
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    println!();
-    let config_path = std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
+async fn run() -> Result<()> {
+    let config_path = env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
-    let config_raw = std::fs::read_to_string(config_file_path.clone()).context(format!(
+    let config_raw = fs::read_to_string(config_file_path.clone()).context(format!(
         "Could not find `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
@@ -217,4 +218,24 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn help() -> Result<()> {
+    println!("Help:");
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    println!();
+
+    let mut args = env::args();
+
+    let _command = args.next();
+    let subcommand = args.next().unwrap_or_default();
+
+    match subcommand.as_str() {
+        "run" => run().await,
+        _ => help(),
+    }
 }
