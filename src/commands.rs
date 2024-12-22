@@ -126,9 +126,9 @@ pub async fn run(
     }
 
     if let Err(err) = fs::create_dir(root) {
+        git(&["checkout", &previous_branch])?;
         git(&["remote", "remove", &local_remote])?;
         git(&["branch", "--delete", "--force", &local_branch])?;
-        git(&["checkout", &previous_branch])?;
         return Err(anyhow::anyhow!(err));
     };
 
