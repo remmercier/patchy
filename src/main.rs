@@ -210,7 +210,7 @@ async fn main() -> Result<()> {
         );
         let command = format!("\n{INDENT}{}\n", command.magenta(),);
         println!(
-            "\n{INDENT}You can still manually overwrite {} with the following command:\n{command}\n",
+            "\n{INDENT}You can still manually overwrite {} with the following command:\n{command}",
             config.local_branch.cyan(),
         )
     }
