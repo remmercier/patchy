@@ -283,13 +283,9 @@ pub async fn pr_fetch(
     let mut args = args.iter();
     let repo = args.next().unwrap();
 
-    dbg!(repo);
-    dbg!(&args);
-
     let client = reqwest::Client::new();
 
     for pull_request in args {
-        dbg!(repo, pull_request);
         match fetch_pull_request(repo, pull_request, &client).await {
             Ok((response, info)) => {
                 println!(
