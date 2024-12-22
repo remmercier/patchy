@@ -16,10 +16,11 @@ use utils::{make_request, with_uuid};
 static CONFIG_ROOT: &str = ".gitpatcher";
 static CONFIG_FILE: &str = "config.toml";
 static APP_NAME: &str = "gitpatcher";
+static INDENT: &str = "    ";
 
 macro_rules! success {
     ($($arg:tt)*) => {{
-        format!("    {}{}", "✓ ".bright_green().bold(), format!($($arg)*))
+        format!("{INDENT}{}{}", "✓ ".bright_green().bold(), format!($($arg)*))
     }};
 }
 
@@ -200,18 +201,18 @@ async fn main() -> Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
-        println!("\n      {}", "Success!".green().bold());
+        println!("\n{INDENT}  {}", "Success!".green().bold());
     } else {
         let command = format!(
-            "\n    {} {} {}\n",
-            "git branch --move --force".blue(),
-            temporary_branch.blue(),
-            config.local_branch.blue()
+            "git branch --move --force {temporary_branch} {}",
+            config.local_branch
         );
+        let command = format!("\n{INDENT}{}\n", command.magenta(),);
         println!(
-            "\n  {} You can still manually overwrite {} with the following command:\n{command}\n",
-            "Info:".bright_blue().bold(),
-            config.local_branch.blue()
+            "\n{INDENT}{}{}{}\n{command}\n",
+            "You can still manually overwrite".italic(),
+            config.local_branch.blue().italic(),
+            "with the following command:".italic(),
         )
     }
 
