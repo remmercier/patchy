@@ -176,21 +176,42 @@ async fn main() -> Result<()> {
 
     let temporary_branch = with_uuid("temp-branch");
 
+    let warning = format!(
+        "{} all contents on {} will be overwritten.",
+        "Warning: ".yellow().bold(),
+        config.local_branch.blue(),
+    );
+
+    let command = format!(
+        "{}{}{}",
+        "git branch --move --force".blue(),
+        temporary_branch.blue(),
+        config.local_branch.blue()
+    );
+
     git(&["switch", "--create", &temporary_branch])?;
 
-    // forcefully renames the branch we are currently on into the branch specified by the user.
-    // WARNING: this is a destructive action which erases the original branch
-    git(&[
-        "branch",
-        "--move",
-        "--force",
-        &temporary_branch,
-        &config.local_branch,
-    ])?;
+    let confirmation = Confirm::new()
+        .with_prompt(format!(
+            "Almost done, would you like us to run this command for you?\n{command}\n{warning}",
+        ))
+        .interact();
 
-    // clean up
-    git(&["remote", "remove", &local_remote])?;
-    git(&["branch", "--delete", "--force", &local_branch])?;
+    if confirmation.is_ok_and(std::convert::identity) {
+        // forcefully renames the branch we are currently on into the branch specified by the user.
+        // WARNING: this is a destructive action which erases the original branch
+        git(&[
+            "branch",
+            "--move",
+            "--force",
+            &temporary_branch,
+            &config.local_branch,
+        ])?;
+
+        // clean up
+        git(&["remote", "remove", &local_remote])?;
+        git(&["branch", "--delete", "--force", &local_branch])?;
+    }
 
     Ok(())
 }
