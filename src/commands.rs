@@ -1,28 +1,38 @@
 use std::{
     path::{Path, PathBuf},
-    process::Output,
+    process::Child,
 };
 
-pub fn get_git_output(output: Output, args: &[&str]) -> anyhow::Result<String> {
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout)
-            .trim_end()
-            .to_owned())
-    } else {
-        Err(anyhow::anyhow!(
-            "Git command failed.\nCommand: git {}\nStdout: {}\nStderr: {}",
-            args.join(" "),
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr),
-        ))
-    }
+pub fn batch_git_processes(output: Vec<Child>, args: &[&str]) -> Vec<anyhow::Result<String>> {
+    output
+        .into_iter()
+        .map(|child| {
+            child
+                .wait_with_output()
+                .map_err(|err| anyhow::anyhow!(err))
+                .and_then(|output| {
+                    if !output.status.success() {
+                        Err(anyhow::anyhow!(
+                            "Git command failed.\nCommand: git {}\nStdout: {}\nStderr: {}",
+                            args.join(" "),
+                            String::from_utf8_lossy(&output.stdout),
+                            String::from_utf8_lossy(&output.stderr),
+                        ))
+                    } else {
+                        Ok(String::from_utf8_lossy(&output.stdout)
+                            .trim_end()
+                            .to_owned())
+                    }
+                })
+        })
+        .collect()
 }
 
-pub fn spawn_git(args: &[&str], git_dir: &Path) -> Result<Output, std::io::Error> {
+pub fn spawn_git_command(args: &[&str], git_dir: &Path) -> Result<Child, std::io::Error> {
     std::process::Command::new("git")
         .args(args)
         .current_dir(git_dir)
-        .output()
+        .spawn()
 }
 
 pub fn get_git_root() -> anyhow::Result<PathBuf> {
@@ -30,14 +40,15 @@ pub fn get_git_root() -> anyhow::Result<PathBuf> {
 
     let args = ["rev-parse", "--show-toplevel"];
 
-    let root = spawn_git(&args, &current_dir)?;
+    let root = vec![spawn_git_command(&args, &current_dir)?];
 
-    get_git_output(root, &args).map(|output| output.into())
+    batch_git_processes(root, &args).into_iter().collect()
 }
 
 pub fn git(args: &[&str]) -> anyhow::Result<String> {
     let root = get_git_root()?;
-    get_git_output(spawn_git(args, &root)?, args)
+    let ok = vec![spawn_git_command(args, &root)?];
+    batch_git_processes(ok, args).into_iter().collect()
 }
 
 pub fn add_remote_branch(
