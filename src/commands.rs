@@ -86,13 +86,13 @@ pub async fn run(
                         );
                     }
                     Err(err) => {
-                        eprintln!("{err}");
+                        eprintln!("{:?}", err);
                         continue;
                     }
                 };
             }
             Err(err) => {
-                eprintln!("{err}");
+                eprintln!("{:?}", err);
                 continue;
             }
         }
@@ -388,9 +388,9 @@ pub async fn fetch_pull_request(
         &format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo),
     )
     .await
-    .context(
-        "Couldn't fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}",
-    )?;
+    .context(format!(
+        "Couldn't fetch required data from remote, skipping. #{pull_request}, skipping."
+    ))?;
 
     let remote_remote = &response.head.repo.clone_url;
 
@@ -408,8 +408,9 @@ pub async fn fetch_pull_request(
         title = normalize_pr_title(&response.title)
     ));
 
-    add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)
-        .context("Could not add remove branch for pull request #{pull_request}, skipping")?;
+    add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch).context(
+        format!("Could not add remove branch for pull request #{pull_request}, skipping"),
+    )?;
 
     let info = Information::new(&local_branch, remote_branch, &local_remote, remote_remote);
 
