@@ -281,7 +281,14 @@ pub async fn pr_fetch(
     _git: impl Fn(&[&str]) -> anyhow::Result<String>,
 ) -> anyhow::Result<()> {
     let mut args = args.iter();
-    let repo = args.next().unwrap();
+    let repo = match args.next() {
+        Some(repo) => repo,
+        None => {
+            return Err(anyhow::anyhow!(
+                "Please provide a repo-owner/repo for example: helix-editor/helix"
+            ))
+        }
+    };
 
     let client = reqwest::Client::new();
 
