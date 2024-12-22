@@ -30,6 +30,7 @@ fn display_link(text: &str, url: &str) -> String {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    println!();
     let config_path = std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
@@ -201,7 +202,7 @@ async fn main() -> Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
-        println!("\n{INDENT}  {}", "Success!".green().bold());
+        println!("\n{INDENT}  {}", "Success!\n".green().bold());
     } else {
         let command = format!(
             "git branch --move --force {temporary_branch} {}",
