@@ -37,7 +37,6 @@ fn display_link(text: &str, url: &str) -> String {
 
 async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>) -> Result<()> {
     println!();
-    println!("1");
 
     let config_path = root.join(CONFIG_ROOT);
 
