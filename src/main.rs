@@ -5,7 +5,10 @@ mod utils;
 
 use colored::Colorize;
 use dialoguer::Confirm;
-use std::fs::{create_dir, read_dir};
+use std::{
+    fs::{create_dir, read_dir},
+    process::ExitCode,
+};
 
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
@@ -202,7 +205,7 @@ async fn main() -> Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
-        println!("\n{INDENT}  {}", "Success!\n".green().bold());
+        println!("\n{INDENT}{}", "  Success!\n".green().bold());
     } else {
         let command = format!(
             "git branch --move --force {temporary_branch} {}",
@@ -210,9 +213,10 @@ async fn main() -> Result<()> {
         );
         let command = format!("\n{INDENT}{}\n", command.magenta(),);
         println!(
-            "\n{INDENT}You can still manually overwrite {} with the following command:\n{command}",
+            "\n{INDENT}  You can still manually overwrite {} with the following command:\n  {command}",
             config.local_branch.cyan(),
-        )
+        );
+        std::process::exit(1)
     }
 
     Ok(())
