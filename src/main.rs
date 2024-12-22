@@ -167,7 +167,7 @@ async fn main() -> Result<()> {
                     &format!("{CONFIG_ROOT}/{file_name}"),
                 ])
                 .context(format!("Could not apply patch {file_name}, skipping"))?;
-                let last_commit_message = git(&["log", "-1", "--format=%B"])?;
+                let last_commit_message = git(&["log", "-1", "--format='%B'"])?;
                 let success_message = success!(
                     "Applied patch {file_name} {}",
                     last_commit_message.blue().italic()
