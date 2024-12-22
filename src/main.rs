@@ -188,10 +188,23 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
 
     let temporary_branch = with_uuid("temp-branch");
 
-    git(&["switch", "--create", &temporary_branch])?;
+    git(&[
+        "switch",
+        "--create",
+        &temporary_branch,
+        "&&",
+        "remote",
+        "remove",
+        &local_remote,
+        "&&",
+        "branch",
+        "--delete",
+        "--force",
+        &local_branch,
+    ])?;
 
-    git(&["remote", "remove", &local_remote])?;
-    git(&["branch", "--delete", "--force", &local_branch])?;
+    // git(&["remote", "remove", &local_remote])?;
+    // git(&["branch", "--delete", "--force", &local_branch])?;
 
     let confirmation = Confirm::new()
         .with_prompt(format!(
