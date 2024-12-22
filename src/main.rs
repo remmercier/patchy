@@ -171,7 +171,7 @@ async fn main() -> Result<()> {
                     "am",
                     "--keep-cr",
                     "--signoff",
-                    &format!("{CONFIG_ROOT}/{file_name}"),
+                    &format!("{CONFIG_ROOT}/{file_name}.patch"),
                 ])
                 .context(format!("Could not apply patch {file_name}, skipping"))?;
                 let last_commit_message = git(&["log", "-1", "--format=%B"])?;
