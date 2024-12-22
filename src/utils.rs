@@ -15,6 +15,10 @@ pub fn with_uuid(s: &str) -> String {
     format!("{APP_NAME}-{s}-{hash}")
 }
 
+pub fn display_link(text: &str, url: &str) -> String {
+    format!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", url, text)
+}
+
 pub async fn make_request(client: &Client, url: &str) -> anyhow::Result<GitHubResponse> {
     let request = client
         .get(url)

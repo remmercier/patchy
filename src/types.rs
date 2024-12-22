@@ -2,6 +2,8 @@ use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
+pub type CommandArgs = HashSet<String>;
+
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Configuration {
