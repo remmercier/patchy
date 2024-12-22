@@ -684,6 +684,7 @@ dependencies = [
  "colored",
  "dialoguer",
  "futures",
+ "indexmap",
  "rand",
  "reqwest",
  "serde",

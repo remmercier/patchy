@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
+use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
 
-pub type CommandArgs = HashSet<String>;
+pub type CommandArgs = IndexSet<String>;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
