@@ -125,7 +125,11 @@ pub async fn run(
         git(&["branch", "--delete", "--force", &local_branch])?;
     }
 
-    fs::create_dir(root.join(CONFIG_ROOT))?;
+    if let Err(err) = fs::create_dir(root.join(CONFIG_ROOT)) {
+        git(&["remote", "remove", &local_remote])?;
+        git(&["branch", "--delete", "--force", &local_branch])?;
+        return Err(anyhow::anyhow!(err));
+    };
 
     for (file_name, _file, contents) in backed_up_files.iter() {
         restore_backup(file_name, contents, root).context("Could not restore backups")?;
