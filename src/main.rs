@@ -186,7 +186,7 @@ async fn main() -> Result<()> {
         .with_prompt(format!(
             "\n    {} Overwrite branch {}? This is irreversible.",
             "»".black(),
-            config.local_branch.blue()
+            config.local_branch.cyan()
         ))
         .interact()
         .unwrap();
@@ -210,7 +210,7 @@ async fn main() -> Result<()> {
         let command = format!("\n{INDENT}{}\n", command.magenta(),);
         println!(
             "\n{INDENT}You can still manually overwrite {} with the following command:\n{command}\n",
-            config.local_branch.blue().italic(),
+            config.local_branch.cyan().italic(),
         )
     }
 
