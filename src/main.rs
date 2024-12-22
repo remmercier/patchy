@@ -1,5 +1,5 @@
 mod backup;
-mod git_cmd;
+mod commands;
 mod types;
 mod utils;
 
@@ -14,6 +14,9 @@ use std::{
 
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
+use commands::batch_git_processes;
+use commands::merge_into_main;
+use commands::{add_remote_branch, checkout, get_git_root, spawn_git_command};
 use types::Configuration;
 use utils::{make_request, with_uuid};
 
@@ -32,14 +35,12 @@ fn display_link(text: &str, url: &str) -> String {
     format!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", url, text)
 }
 
-async fn run(
-    _args: &Args,
-    root: &Path,
-    git: impl Fn(git_cmd::Args) -> Result<String>,
-) -> Result<()> {
+async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>) -> Result<()> {
     println!();
 
     let config_path = root.join(CONFIG_ROOT);
+
+    dbg!(root);
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
@@ -65,14 +66,14 @@ async fn run(
 
     let local_branch = with_uuid(&config.remote_branch);
 
-    git_cmd::add_remote_branch(
+    add_remote_branch(
         &local_remote,
         &local_branch,
         &remote_remote,
         &config.remote_branch,
     )?;
 
-    git_cmd::checkout(&local_branch, &local_remote)?;
+    checkout(&local_branch, &local_remote)?;
 
     let client = reqwest::Client::new();
 
@@ -100,8 +101,8 @@ async fn run(
         let local_branch = with_uuid(remote_branch);
 
         if let Err(err) = async {
-            git_cmd::add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
-            git_cmd::merge_into_main(&local_branch, remote_branch)?;
+            add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch)?;
+            merge_into_main(&local_branch, remote_branch)?;
             Ok::<(), anyhow::Error>(())
         }
         .await
@@ -348,11 +349,12 @@ async fn main() -> Result<()> {
     let _command_name = args.next();
     let subcommand = args.next().unwrap_or_default();
 
-    let root = git_cmd::get_root()?;
+    let root = get_git_root()?;
 
-    let git = |args: git_cmd::Args| -> anyhow::Result<String> {
-        let (child, _args) = git_cmd::spawn(args, &root);
-        git_cmd::run(child?, args)
+    let git = |args: &[&str]| -> anyhow::Result<String> {
+        batch_git_processes(vec![spawn_git_command(args, &root)?], args)
+            .into_iter()
+            .collect()
     };
 
     let mut args: Args = args.collect();
