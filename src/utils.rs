@@ -1,4 +1,3 @@
-use crate::APP_NAME;
 use anyhow::{anyhow, Context};
 use rand::Rng;
 use reqwest::{header::USER_AGENT, Client};
@@ -6,13 +5,29 @@ use reqwest::{header::USER_AGENT, Client};
 use crate::types::GitHubResponse;
 
 pub fn with_uuid(s: &str) -> String {
-    let hash: String = rand::thread_rng()
-        .sample_iter(&rand::distributions::Alphanumeric)
-        .take(8)
-        .map(char::from)
-        .collect();
+    format!(
+        "{uuid}-{s}",
+        uuid = rand::thread_rng()
+            .sample_iter(&rand::distributions::Alphanumeric)
+            .take(4)
+            .map(char::from)
+            .collect::<String>()
+    )
+}
 
-    format!("{APP_NAME}-{s}-{hash}")
+pub fn normalize_pr_title(pr_title: &str) -> String {
+    pr_title
+        .chars()
+        .filter_map(|c| {
+            if c.is_alphanumeric() || c == '-' {
+                Some(c.to_ascii_lowercase())
+            } else if c.is_whitespace() {
+                Some('-')
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 pub fn display_link(text: &str, url: &str) -> String {

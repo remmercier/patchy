@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
             "run" => run(&args, &root, &git).await?,
             "gen-patch" => gen_patch(&args)?,
             // lower level commands
-            "pr-fetch" => pr_fetch(&args)?,
+            "pr-fetch" => pr_fetch(&args, &git).await?,
             unrecognized => {
                 if !unrecognized.is_empty() {
                     let message = format!(
