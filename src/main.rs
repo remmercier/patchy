@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
                     )
                     .red();
 
-                    eprintln!("{message}");
+                    fail!("{message}");
                 }
 
                 help(&args)?;

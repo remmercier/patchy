@@ -16,9 +16,24 @@ use colored::Colorize;
 use dialoguer::Confirm;
 use reqwest::Client;
 
+#[macro_export]
 macro_rules! success {
     ($($arg:tt)*) => {{
-        format!("{INDENT}{}{}", "✓ ".bright_green().bold(), format!($($arg)*))
+        println!("{INDENT}{}{}", "✓ ".bright_green().bold(), format!($($arg)*))
+    }};
+}
+
+#[macro_export]
+macro_rules! info {
+    ($($arg:tt)*) => {{
+        println!("{INDENT}{}{}", "i ".bright_blue().bold(), format!($($arg)*))
+    }};
+}
+
+#[macro_export]
+macro_rules! fail {
+    ($($arg:tt)*) => {{
+        eprintln!("{INDENT}{}{}", "i ".bright_red().bold(), format!($($arg)*))
     }};
 }
 
@@ -73,30 +88,27 @@ pub async fn run(
             Ok((response, info)) => {
                 match merge_pull_request(info, &git).await {
                     Ok(()) => {
-                        println!(
-                            "{}",
-                            success!(
-                                "Merged pull request {}",
-                                display_link(
-                                    &format!(
-                                        "{}{} {}",
-                                        "#".bright_blue(),
-                                        pull_request.bright_blue(),
-                                        &response.title.blue().italic()
-                                    ),
-                                    &response.html_url
+                        success!(
+                            "Merged pull request {}",
+                            display_link(
+                                &format!(
+                                    "{}{} {}",
+                                    "#".bright_blue(),
+                                    pull_request.bright_blue(),
+                                    &response.title.blue().italic()
                                 ),
-                            )
-                        );
+                                &response.html_url
+                            ),
+                        )
                     }
                     Err(err) => {
-                        eprintln!("{err:#?}");
+                        fail!("{err:#?}");
                         continue;
                     }
                 };
             }
             Err(err) => {
-                eprintln!("{err:#?}");
+                fail!("{err:#?}");
                 continue;
             }
         }
@@ -132,7 +144,7 @@ pub async fn run(
                 .context(format!("Could not apply patch {file_name}, skipping"))?;
 
                 let last_commit_message = git(&["log", "-1", "--format=%B"])?;
-                let success_message = success!(
+                success!(
                     "Applied patch {file_name} {}",
                     last_commit_message
                         .lines()
@@ -141,8 +153,6 @@ pub async fn run(
                         .blue()
                         .italic()
                 );
-
-                println!("{success_message}")
             }
         }
     }
@@ -289,7 +299,7 @@ pub fn init(_args: &CommandArgs, root: &path::Path) -> anyhow::Result<()> {
             .interact()
             .unwrap();
         if !confirmation {
-            anyhow::bail!("Did not overwrite it {config_file_path:?}.");
+            anyhow::bail!("Did not overwrite {config_file_path:?}");
         }
     }
 
@@ -299,7 +309,7 @@ pub fn init(_args: &CommandArgs, root: &path::Path) -> anyhow::Result<()> {
 
     file.write_all(example_config)?;
 
-    println!("{}", success!("Created config file {config_file_path:?}"));
+    success!("Created config file {config_file_path:?}");
 
     Ok(())
 }
@@ -327,22 +337,19 @@ pub async fn pr_fetch(
     for pull_request in args {
         match fetch_pull_request(repo, pull_request, &client).await {
             Ok((response, info)) => {
-                println!(
-                    "{}",
-                    success!(
-                        "Fetched pull request {} available at branch {}",
-                        display_link(
-                            &format!(
-                                "{}{} {}",
-                                "#".bright_blue(),
-                                pull_request.bright_blue(),
-                                response.title.blue().italic()
-                            ),
-                            &response.html_url
+                success!(
+                    "Fetched pull request {} available at branch {}",
+                    display_link(
+                        &format!(
+                            "{}{} {}",
+                            "#".bright_blue(),
+                            pull_request.bright_blue(),
+                            response.title.blue().italic()
                         ),
-                        info.branch.local_name.cyan()
-                    )
-                );
+                        &response.html_url
+                    ),
+                    info.branch.local_name.cyan()
+                )
             }
             Err(err) => {
                 eprintln!("{err:#?}");
