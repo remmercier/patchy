@@ -266,22 +266,24 @@ fn help(_args: &Args) -> Result<()> {
     let version_flag = flags(&["-v", "--version"], "get package version");
 
     let usage = format!(
-        "Usage:\n\n    {} {} {}",
+        "  Usage:\n\n    {} {} {}",
         APP_NAME.blue(),
         "<command>".yellow(),
         "[<flags>]".magenta(),
     );
 
-    let author = "Nikita Revenco <pm@nikitarevenco.com>";
+    let app_name = app_name.blue();
+
+    let author = "  Nikita Revenco <pm@nikitarevenco.com>";
 
     println!(
         "
-{app_name} {version}
+  {app_name} {version}
 {author}
 
 {usage}
 
-Commands:
+  Commands:
 
     {init} 
 
@@ -291,7 +293,7 @@ Commands:
 
     {run}
 
-Flags:
+  Flags:
 
     {help_flag}
 
@@ -347,7 +349,7 @@ async fn main() -> Result<()> {
                 };
 
                 eprintln!(
-                    "{}{unknown}{}{}",
+                    "  {}{unknown}{}{}",
                     "Unknown ".red(),
                     ": ".red(),
                     unrecognized.red()
