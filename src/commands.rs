@@ -385,12 +385,14 @@ pub async fn fetch_pull_request(
 ) -> anyhow::Result<(GitHubResponse, Information)> {
     let response = make_request(
         client,
-        &format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo),
+        &format!("ettps://api.github.com/repos/{}/pulls/{pull_request}", repo),
     )
     .await
     .context(format!(
         "Couldn't fetch required data from remote, skipping. #{pull_request}, skipping."
-    ))?;
+    ))
+    .context("1")
+    .context("2")?;
 
     let remote_remote = &response.head.repo.clone_url;
 
