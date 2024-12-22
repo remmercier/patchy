@@ -112,10 +112,10 @@ async fn main() -> Result<()> {
                 "Merged pull request {}",
                 display_link(
                     &format!(
-                        "{}{}: {}",
-                        "#".yellow(),
-                        pull_request.yellow(),
-                        response.title
+                        "{}{} {}",
+                        "#".bright_blue(),
+                        pull_request.bright_blue(),
+                        response.title.blue().italic()
                     ),
                     &response.html_url
                 ),
