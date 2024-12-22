@@ -6,7 +6,7 @@ mod utils;
 
 use colored::Colorize;
 use commands::{gen_patch, help, init, pr_fetch, run};
-use std::env;
+use std::{env, path::Path};
 
 use anyhow::Result;
 use git_commands::{get_git_output, get_git_root, spawn_git};
@@ -16,6 +16,43 @@ static CONFIG_ROOT: &str = ".patchy";
 static CONFIG_FILE: &str = "config.toml";
 static APP_NAME: &str = env!("CARGO_PKG_NAME");
 static INDENT: &str = "  ";
+
+async fn process_subcommand(
+    subcommand: &str,
+    args: CommandArgs,
+    root: &Path,
+    git: &impl Fn(&[&str]) -> anyhow::Result<String>,
+) -> Result<()> {
+    match subcommand {
+        // main commands
+        "init" => init(&args, root)?,
+        "run" => run(&args, root, &git).await?,
+        "gen-patch" => gen_patch(&args)?,
+        // lower level commands
+        "pr-fetch" => pr_fetch(&args, &git).await?,
+        unrecognized => {
+            if !unrecognized.is_empty() {
+                anyhow::bail!(
+                    "{}",
+                    format!(
+                        "  Unknown {unknown}: {}",
+                        unrecognized,
+                        unknown = if unrecognized.starts_with("-") {
+                            "flag".red()
+                        } else {
+                            "command".red()
+                        }
+                    )
+                    .red()
+                )
+            }
+
+            help(&args)?;
+        }
+    }
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -41,34 +78,12 @@ async fn main() -> Result<()> {
 
         Ok(())
     } else {
-        match subcommand.as_str() {
-            // main commands
-            "init" => init(&args, &root)?,
-            "run" => run(&args, &root, &git).await?,
-            "gen-patch" => gen_patch(&args)?,
-            // lower level commands
-            "pr-fetch" => pr_fetch(&args, &git).await?,
-            unrecognized => {
-                if !unrecognized.is_empty() {
-                    let message = format!(
-                        "  Unknown {unknown}: {}",
-                        unrecognized,
-                        unknown = if unrecognized.starts_with("-") {
-                            "flag".red()
-                        } else {
-                            "command".red()
-                        }
-                    )
-                    .red();
-
-                    fail!("{message}");
-                }
-
-                help(&args)?;
-                std::process::exit(1)
+        match process_subcommand(subcommand.as_str(), args, &root, &git).await {
+            Ok(()) => Ok(()),
+            Err(msg) => {
+                fail!("{msg}");
+                std::process::exit(1);
             }
         }
-
-        Ok(())
     }
 }

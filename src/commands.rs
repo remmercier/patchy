@@ -102,13 +102,16 @@ pub async fn run(
                         )
                     }
                     Err(err) => {
-                        fail!("{err:#?}");
+                        fail!(
+                            "Could not merge pull request {pr}\n\n{err:#?}",
+                            pr = pull_request.bright_blue()
+                        );
                         continue;
                     }
                 };
             }
             Err(err) => {
-                fail!("{err:#?}");
+                fail!("Could not fetch branch from remote\n\n{err:#?}");
                 continue;
             }
         }
@@ -299,8 +302,7 @@ pub fn init(_args: &CommandArgs, root: &path::Path) -> anyhow::Result<()> {
             .interact()
             .unwrap();
         if !confirmation {
-            info!("Did not overwrite {config_file_path:?}");
-            std::process::exit(1)
+            anyhow::bail!("Did not overwrite {config_file_path:?}");
         }
     }
 
