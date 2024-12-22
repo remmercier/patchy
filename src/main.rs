@@ -39,7 +39,6 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
     println!();
 
     let config_path = root.join(CONFIG_ROOT);
-    // let config_path = env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
@@ -143,7 +142,9 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
     create_dir(CONFIG_ROOT)?;
 
     for (file_name, _, contents) in backed_up_files.iter() {
+        println!("1");
         restore_backup(file_name, contents).context("Could not restore backups")?;
+        println!("2");
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
@@ -237,12 +238,6 @@ fn help(_args: &Args) -> Result<()> {
         let args = args.green();
         format!("{command}{args}\n    {} {description}", "»".black())
     }
-
-    // fn example(command: &str) -> String {
-    //     let command = command.blue();
-    //     let args = args.yellow();
-    //     format!("{command}{args}\n    {} {description}", "»".black())
-    // }
 
     fn flags(flags: &[&str; 2], description: &str) -> String {
         let flags: Vec<_> = flags.iter().map(|flag| flag.magenta()).collect();
