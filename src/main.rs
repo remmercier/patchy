@@ -215,7 +215,7 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
         println!("\n{INDENT}{}", "  Success!\n".green().bold());
     } else {
         let command = format!(
-            "git branch --move --force {temporary_branch} {}",
+            "  git branch --move --force {temporary_branch} {}",
             config.local_branch
         );
         let command = format!("\n{INDENT}{}\n", command.magenta(),);
