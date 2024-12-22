@@ -1,6 +1,5 @@
 mod backup;
 mod commands;
-mod log;
 mod types;
 mod utils;
 
@@ -19,29 +18,35 @@ static CONFIG_ROOT: &str = ".gitpatcher";
 static CONFIG_FILE: &str = "config.toml";
 static APP_NAME: &str = "gitpatcher";
 
+macro_rules! success {
+    ($($arg:tt)*) => {{
+        format!("    {}{}", "✓ ".bright_green().bold(), format!($($arg)*))
+    }};
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    git(&["rev-parse", "--is-inside-work-tree"]).context(error!("Not in a git repository"))?;
+    git(&["rev-parse", "--is-inside-work-tree"]).context("Not in a git repository")?;
 
     let config_path = std::env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
-    let config_raw = std::fs::read_to_string(config_file_path.clone()).context(error!(
+    let config_raw = std::fs::read_to_string(config_file_path.clone()).context(format!(
         "Could not find `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
-    let config = toml::from_str::<Configuration>(&config_raw).context(error!(
+    let config = toml::from_str::<Configuration>(&config_raw).context(format!(
         "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
-    let config_files = read_dir(&config_path).context(error!(
+    let config_files = read_dir(&config_path).context(format!(
         "Could not read files in directory {:?}",
         &config_path
     ))?;
 
     let backed_up_files =
-        backup_files(config_files).context(error!("Could not {APP_NAME} configuration files"))?;
+        backup_files(config_files).context(format!("Could not {APP_NAME} configuration files"))?;
 
     let local_main_temp_remote = with_uuid(&config.repo);
 
@@ -56,8 +61,10 @@ async fn main() -> Result<()> {
         &config.remote_branch,
     )?;
 
-    git(&["checkout", &local_main_temp_branch])
-        .context(error!("Unable to checkout branch {}", config.remote_branch))?;
+    git(&["checkout", &local_main_temp_branch]).context(format!(
+        "Unable to checkout branch {}",
+        config.remote_branch
+    ))?;
 
     let client = reqwest::Client::new();
 
@@ -75,10 +82,7 @@ async fn main() -> Result<()> {
         let response = match handle_request(request).await {
             Ok(response) => response,
             Err(err) => {
-                let error_message = error!(
-                "Could fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}",
-            );
-                eprintln!("{error_message}");
+                eprintln!("Could fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}");
                 continue;
             }
         };
@@ -95,13 +99,15 @@ async fn main() -> Result<()> {
         }
         .await
         {
-            let error_message = error!(
-                "Could not merge remote branch from pull request #{pull_request}, skipping.\n{err}",
+            eprintln!(
+                "Could not merge remote branch from pull request #{pull_request}, skipping.\n{err}"
             );
-            eprintln!("{error_message}");
             continue;
         } else {
-            let success_message = success!("Merged pull request #{pull_request}");
+            let success_message = success!(
+                "Merged pull request #{pull_request} {}",
+                response.title.black()
+            );
             println!("{success_message}")
         }
 
@@ -136,7 +142,7 @@ async fn main() -> Result<()> {
     create_dir(CONFIG_ROOT)?;
 
     for (file_name, _, contents) in backed_up_files.iter() {
-        restore_backup(file_name, contents).context(error!("Could not restore backups"))?;
+        restore_backup(file_name, contents).context("Could not restore backups")?;
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
@@ -148,7 +154,7 @@ async fn main() -> Result<()> {
                     "--signoff",
                     &format!("{CONFIG_ROOT}/{file_name}"),
                 ])
-                .context(error!("Could not apply patch {file_name}, skipping"))?;
+                .context(format!("Could not apply patch {file_name}, skipping"))?;
                 let success_message = success!("Applied patch {file_name}");
                 println!("{success_message}")
             }

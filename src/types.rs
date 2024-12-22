@@ -15,6 +15,7 @@ pub struct Configuration {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GitHubResponse {
     pub head: Head,
+    pub title: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
