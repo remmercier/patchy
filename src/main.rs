@@ -210,9 +210,9 @@ async fn main() -> Result<()> {
         let command = format!("\n{INDENT}{}\n", command.magenta(),);
         println!(
             "\n{INDENT}{}{}{}\n{command}\n",
-            "You can still manually overwrite".italic(),
+            "You can still manually overwrite ".italic(),
             config.local_branch.blue().italic(),
-            "with the following command:".italic(),
+            " with the following command:".italic(),
         )
     }
 
