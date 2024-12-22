@@ -1,7 +1,7 @@
 use crate::APP_NAME;
 use anyhow::{anyhow, Context};
 use rand::Rng;
-use reqwest::{Error, Response};
+use reqwest::{header::USER_AGENT, Client};
 
 use crate::types::GitHubResponse;
 
@@ -15,7 +15,13 @@ pub fn with_uuid(s: &str) -> String {
     format!("{APP_NAME}-{s}-{hash}")
 }
 
-pub async fn handle_request(request: Result<Response, Error>) -> anyhow::Result<GitHubResponse> {
+pub async fn make_request(client: &Client, url: &str) -> anyhow::Result<GitHubResponse> {
+    let request = client
+        .get(url)
+        .header(USER_AGENT, "{APP_NAME}")
+        .send()
+        .await;
+
     match request {
         Ok(res) if res.status().is_success() => {
             let out = res.text().await?;

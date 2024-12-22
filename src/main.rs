@@ -9,9 +9,8 @@ use std::fs::{create_dir, read_dir};
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
 use commands::{add_remote_branch, checkout, git, merge_into_main};
-use reqwest::header::USER_AGENT;
 use types::Configuration;
-use utils::{handle_request, with_uuid};
+use utils::{make_request, with_uuid};
 
 static CONFIG_ROOT: &str = ".gitpatcher";
 static CONFIG_FILE: &str = "config.toml";
@@ -66,18 +65,16 @@ async fn main() -> Result<()> {
 
     let client = reqwest::Client::new();
 
-    // fetch each pull request and merge it into the detached head remote
     for pull_request in config.pull_requests.iter() {
-        let request = client
-            .get(format!(
+        let response = match make_request(
+            &client,
+            &format!(
                 "https://api.github.com/repos/{}/pulls/{pull_request}",
                 config.repo
-            ))
-            .header(USER_AGENT, "{APP_NAME}")
-            .send()
-            .await;
-
-        let response = match handle_request(request).await {
+            ),
+        )
+        .await
+        {
             Ok(response) => response,
             Err(err) => {
                 eprintln!("Couldn't fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}");
@@ -117,7 +114,9 @@ async fn main() -> Result<()> {
             println!("{success_message}")
         }
 
-        if git(&["diff", "--cached", "--quiet"]).is_err() {
+        let has_unstaged_changes = git(&["diff", "--cached", "--quiet"]).is_err();
+
+        if has_unstaged_changes {
             git(&[
                 "commit",
                 "--message",
@@ -125,7 +124,6 @@ async fn main() -> Result<()> {
             ])?;
         }
 
-        // clean up by removing the temporary remote
         git(&["remote", "remove", &local_remote])?;
         git(&["branch", "-D", &local_branch])?;
     }
@@ -144,7 +142,6 @@ async fn main() -> Result<()> {
         &config.local_branch,
     ])?;
 
-    // Restore our configuration files
     create_dir(CONFIG_ROOT)?;
 
     for (file_name, _, contents) in backed_up_files.iter() {
@@ -165,6 +162,7 @@ async fn main() -> Result<()> {
                     &format!("{CONFIG_ROOT}/{file_name}.patch"),
                 ])
                 .context(format!("Could not apply patch {file_name}, skipping"))?;
+
                 let last_commit_message = git(&["log", "-1", "--format=%B"])?;
                 let success_message = success!(
                     "Applied patch {file_name} {}",
