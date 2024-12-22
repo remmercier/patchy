@@ -8,7 +8,7 @@ use crate::types::GitHubResponse;
 pub fn with_uuid(s: &str) -> String {
     let hash: String = rand::thread_rng()
         .sample_iter(&rand::distributions::Alphanumeric)
-        .take(30)
+        .take(8)
         .map(char::from)
         .collect();
 

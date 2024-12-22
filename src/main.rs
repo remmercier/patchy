@@ -15,7 +15,7 @@ use utils::{make_request, with_uuid};
 
 static CONFIG_ROOT: &str = ".gitpatcher";
 static CONFIG_FILE: &str = "config.toml";
-static APP_NAME: &str = "gitpatcher";
+static APP_NAME: &str = "gpatch";
 static INDENT: &str = "    ";
 
 macro_rules! success {
@@ -209,10 +209,8 @@ async fn main() -> Result<()> {
         );
         let command = format!("\n{INDENT}{}\n", command.magenta(),);
         println!(
-            "\n{INDENT}{}{}{}\n{command}\n",
-            "You can still manually overwrite ".italic(),
+            "\n{INDENT}You can still manually overwrite {} with the following command:\n{command}\n",
             config.local_branch.blue().italic(),
-            " with the following command:".italic(),
         )
     }
 
