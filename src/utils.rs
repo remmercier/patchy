@@ -47,23 +47,22 @@ pub async fn make_request(client: &Client, url: &str) -> anyhow::Result<GitHubRe
 
             let response: GitHubResponse =
                 serde_json::from_str(&out).context("Could not parse response.\n{out}")?;
-            println!("1");
 
             Ok(response)
         }
         Ok(res) => {
-            println!("2");
+            let status = res.status();
+            let text = res.text().await?;
+
+            dbg!(&text);
+            dbg!(&status);
 
             Err(anyhow!(
                 "Request failed with status {}\nResponse: {}",
-                res.status(),
-                res.text().await?
+                status,
+                text
             ))
         }
-        Err(err) => {
-            println!("3");
-
-            Err(anyhow!("Error sending request: {err}"))
-        }
+        Err(err) => Err(anyhow!("Error sending request: {err}")),
     }
 }
