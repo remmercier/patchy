@@ -48,9 +48,9 @@ pub fn get_root() -> anyhow::Result<PathBuf> {
 
     let (root, _args) = spawn(&args, &current_dir);
 
-    let m = run(root?, &args);
+    dbg!(&root);
 
-    dbg!(&m);
+    let m = run(root?, &args);
 
     m.map(|result| result.into())
 }
