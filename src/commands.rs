@@ -45,13 +45,14 @@ pub fn add_remote_branch(
     }
 }
 
-pub fn checkout(branch: &str) -> anyhow::Result<()> {
+pub fn checkout(branch: &str, remote: &str) -> anyhow::Result<()> {
     match git(&["checkout", branch]) {
         Ok(_) => Ok(()),
         Err(err) => {
             git(&["branch", "-D", branch])?;
+            git(&["remote", "remove", remote])?;
             Err(anyhow::anyhow!(
-                "Could not checkout branch: {branch}\n{err}"
+                "Could not checkout branch: {branch}, which belongs to remote {remote}\n{err}"
             ))
         }
     }

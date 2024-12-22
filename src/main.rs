@@ -49,20 +49,20 @@ async fn main() -> Result<()> {
     let backed_up_files =
         backup_files(config_files).context(format!("Could not {APP_NAME} configuration files"))?;
 
-    let local_main_temp_remote = with_uuid(&config.repo);
+    let local_remote = with_uuid(&config.repo);
 
-    let repo_link = format!("https://github.com/{}.git", config.repo);
+    let remote_remote = format!("https://github.com/{}.git", config.repo);
 
-    let local_main_temp_branch = with_uuid(&config.remote_branch);
+    let local_branch = with_uuid(&config.remote_branch);
 
     add_remote_branch(
-        &local_main_temp_remote,
-        &local_main_temp_branch,
-        &repo_link,
+        &local_remote,
+        &local_branch,
+        &remote_remote,
         &config.remote_branch,
     )?;
 
-    checkout(&local_main_temp_branch)?;
+    checkout(&local_branch, &local_remote)?;
 
     let client = reqwest::Client::new();
 
@@ -182,8 +182,8 @@ async fn main() -> Result<()> {
     }
 
     // clean up
-    git(&["remote", "remove", &local_main_temp_remote])?;
-    git(&["branch", "-D", &local_main_temp_branch])?;
+    git(&["remote", "remove", &local_remote])?;
+    git(&["branch", "-D", &local_branch])?;
 
     git(&["add", CONFIG_ROOT])?;
 
