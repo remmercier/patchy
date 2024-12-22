@@ -284,6 +284,7 @@ pub async fn pr_fetch(
     let repo = args.next().unwrap();
 
     dbg!(repo);
+    dbg!(&args);
 
     let client = reqwest::Client::new();
 
