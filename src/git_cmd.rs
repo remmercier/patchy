@@ -5,12 +5,12 @@ use std::{
 
 pub type Args<'a> = &'a [&'a str];
 
-// pub fn batch_git_processes(output: Vec<(Child, Args)>) -> Vec<anyhow::Result<String>> {
-//     output
-//         .into_iter()
-//         .map(|(child, git_args)| run(child, git_args))
-//         .collect()
-// }
+pub fn batch_git_processes(output: Vec<(Child, Args)>) -> Vec<anyhow::Result<String>> {
+    output
+        .into_iter()
+        .map(|(child, git_args)| run(child, git_args))
+        .collect()
+}
 
 pub fn run(a: Child, args: &[&str]) -> anyhow::Result<String> {
     a.wait_with_output()

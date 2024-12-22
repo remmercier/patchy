@@ -350,8 +350,6 @@ async fn main() -> Result<()> {
 
     let root = git_cmd::get_root()?;
 
-    dbg!(root);
-
     let git = |args: git_cmd::Args| -> anyhow::Result<String> {
         let (child, _args) = git_cmd::spawn(args, &root);
         git_cmd::run(child?, args)
