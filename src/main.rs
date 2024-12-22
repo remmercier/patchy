@@ -65,6 +65,7 @@ async fn main() -> Result<()> {
 
     let client = reqwest::Client::new();
 
+    // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads
     for pull_request in config.pull_requests.iter() {
         let response = match make_request(
             &client,
