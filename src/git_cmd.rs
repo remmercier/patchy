@@ -50,7 +50,10 @@ pub fn get_root() -> anyhow::Result<PathBuf> {
 
     let m = run(root?, &args);
 
-    m.map(|result| result.into())
+    m.map(|result| {
+        dbg!(&result);
+        result.into()
+    })
 }
 
 pub fn git(args: &[&str]) -> anyhow::Result<String> {
