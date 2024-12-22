@@ -299,7 +299,8 @@ pub fn init(_args: &CommandArgs, root: &path::Path) -> anyhow::Result<()> {
             .interact()
             .unwrap();
         if !confirmation {
-            anyhow::bail!("Did not overwrite {config_file_path:?}");
+            info!("Did not overwrite {config_file_path:?}");
+            std::process::exit(1)
         }
     }
 
