@@ -91,7 +91,17 @@ remote-branch = "master"
 local-branch = "gpatch"
 
 # List of pull requests which you would like to merge
-pull-requests = [ "12309", "11285", "8908", "11164" ]
+# TIP: Add comments above pull requests to help yourself understand which PRs do what
+pull-requests = [
+   # syntax highlighting for nginx files
+   "12309",
+   # adds file explorer
+   "11285",
+   # global status line
+   "8908",
+   # command expansions
+   "11164"
+]
 
 # A list of patches to apply
 patches = []
