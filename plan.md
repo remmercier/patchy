@@ -36,12 +36,12 @@ This will move our changes from the thing that we did.
 git switch --create branch-name2
 ```
 
-First, backup the `.gitpatcher.toml` file:
+First, backup the `.gpatch.toml` file:
 
 ```
-git switch --create gitpatcher-backup
-git add .gitpatcher.toml
-git commit --message "Store .gitpatcher.toml"
+git switch --create gpatch-backup
+git add .gpatch.toml
+git commit --message "Store .gpatch.toml"
 ```
 
 The following command force replaces the original branch name with our new branch.
@@ -52,9 +52,9 @@ git branch --move --force branch-name2 branch-name
 
 At this point, we have merged all the pull requests and also stored it in a new branch.
 
-We're going to restore our `.gitpatcher.toml` file now:
+We're going to restore our `.gpatch.toml` file now:
 
 ```
-git cherry-pick --no-commit gitpatcher-backup
-git commit --message "Restore .gitpatcher.toml"
+git cherry-pick --no-commit gpatch-backup
+git commit --message "Restore .gpatch.toml"
 ```

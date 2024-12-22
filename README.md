@@ -86,7 +86,7 @@ repo = "helix-editor/helix"
 # the repository's branch
 remote-branch = "master"
 
-# This is the branch where you will see all result from gitpatchers' work. Set it to any branch you want.
+# This is the branch where you will see all result from gpatch's work. Set it to any branch you want.
 # WARNING: Make sure you do not store any important work on this branch. It will be erased.
 local-branch = "gpatch"
 

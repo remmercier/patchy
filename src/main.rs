@@ -5,10 +5,7 @@ mod utils;
 
 use colored::Colorize;
 use dialoguer::Confirm;
-use std::{
-    fs::{create_dir, read_dir},
-    process::ExitCode,
-};
+use std::fs::{create_dir, read_dir};
 
 use anyhow::{Context, Result};
 use backup::{backup_files, restore_backup};
@@ -16,7 +13,7 @@ use commands::{add_remote_branch, checkout, git, merge_into_main};
 use types::Configuration;
 use utils::{make_request, with_uuid};
 
-static CONFIG_ROOT: &str = ".gitpatcher";
+static CONFIG_ROOT: &str = ".gpatch";
 static CONFIG_FILE: &str = "config.toml";
 static APP_NAME: &str = "gpatch";
 static INDENT: &str = "  ";
