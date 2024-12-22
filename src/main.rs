@@ -111,7 +111,12 @@ async fn main() -> Result<()> {
             let success_message = success!(
                 "Merged pull request {}",
                 display_link(
-                    &format!("#{}: {}", pull_request.yellow(), response.title.blue()),
+                    &format!(
+                        "{}{}: {}",
+                        "#".yellow(),
+                        pull_request.yellow(),
+                        response.title
+                    ),
                     &response.html_url
                 ),
             );
