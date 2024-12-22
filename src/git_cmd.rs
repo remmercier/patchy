@@ -35,8 +35,10 @@ pub fn spawn<'a>(
     args: &'a [&'a str],
     git_dir: &'a Path,
 ) -> (Result<Child, std::io::Error>, Args<'a>) {
-    let umm = Command::new("git").args(args).current_dir(git_dir).spawn();
-    (umm, args)
+    (
+        Command::new("git").args(args).current_dir(git_dir).spawn(),
+        args,
+    )
 }
 
 pub fn get_root() -> anyhow::Result<PathBuf> {
