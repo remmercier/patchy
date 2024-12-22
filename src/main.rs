@@ -224,29 +224,73 @@ async fn run(_args: Args) -> Result<()> {
 type Args = HashSet<String>;
 
 fn help(_args: Args) -> Result<()> {
-    fn subcommand(command: &str, description: &str) -> String {
-        format!("{command}{}{description}", " ".repeat(14 - command.len()))
-    }
-    let init = subcommand("init", "Create example config file");
-    let pr_fetch = subcommand(
-        "pr-fetch",
-        "Fetch pull request for a GitHub repository as a local branch",
-    );
-    let gen_patch = subcommand("gen-patch", "Generate a .patch file from a commit hash");
-    let run = subcommand("run", &format!("Start {APP_NAME}"));
     let version = env!("CARGO_PKG_VERSION");
     let app_name = env!("CARGO_PKG_NAME");
+    fn subcommand(command: &str, args: &str, description: &str) -> String {
+        let command = command.blue();
+        let args = args.yellow();
+        format!("{command}{args}\n    {} {description}", "»".black())
+    }
+
+    fn flags(flags: &[&str; 2], description: &str) -> String {
+        let flags: Vec<_> = flags.iter().map(|flag| flag.magenta()).collect();
+        let flag1 = &flags[0];
+        let flag2 = &flags[1];
+        let flags = format!(
+            "{flag1}{}{flag2}",
+            if *flag2 == "".into() {
+                "".into()
+            } else {
+                ", ".black()
+            }
+        );
+        format!("{flags}\n    {} {description}", "»".black())
+    }
+
+    let init = subcommand("init", "", "Create example config file");
+    let pr_fetch = subcommand(
+        "pr-fetch",
+        " <repo-link> <pr-number>",
+        "Fetch pull request for a GitHub repository as a local branch",
+    );
+    let gen_patch = subcommand(
+        "gen-patch",
+        " <commit-hash>...",
+        "Generate a .patch file from commit hashes",
+    );
+    let run = subcommand("run", "", &format!("Start {app_name}"));
+
+    let help_flag = flags(&["-h", "--help"], "print this message");
+    let version_flag = flags(&["-v", "--version"], "get package version");
+
+    let usage = format!(
+        "Usage: {} {} {}",
+        APP_NAME.blue(),
+        "<command>".yellow(),
+        "[<flags>]".magenta(),
+    );
 
     println!(
         "\
 {app_name} {version}
 
-Usage: {APP_NAME}
+{usage}
+
+Commands:
 
     {init} 
+
     {pr_fetch} 
+
     {gen_patch} 
+
     {run}
+
+Flags:
+
+    {help_flag}
+
+    {version_flag}
 "
     );
     Ok(())
