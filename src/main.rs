@@ -142,7 +142,7 @@ async fn run(_args: &Args, root: &Path, git: impl Fn(&[&str]) -> Result<String>)
     create_dir(root.join(CONFIG_ROOT))?;
 
     for (file_name, _, contents) in backed_up_files.iter() {
-        restore_backup(file_name, contents).context("Could not restore backups")?;
+        restore_backup(file_name, contents, root).context("Could not restore backups")?;
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
