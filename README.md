@@ -32,13 +32,13 @@ Create a patch from a commit:
 
 ```sh
 # obtain commit hashes e.g. from `git log`
-gpatch gen <hash-of-commit>
+gpatch gen-patch <hash-of-commit>
 ```
 
 For example, I'm running:
 
 ```sh
-gpatch gen 7bb8ec5a77769d88855d41dd5fecfaece54cf471
+gpatch gen-patch 7bb8ec5a77769d88855d41dd5fecfaece54cf471
 ```
 
 It generated a file, `.gpatch/feat-swap-light-and-dark-colors.patch`:

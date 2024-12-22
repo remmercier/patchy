@@ -1,0 +1,4 @@
+- Rename `gpatcher` to `gpatch`
+- Add `gpatch init`
+- Add `gpatch run`
+- Add `gpatch gen-patch`
