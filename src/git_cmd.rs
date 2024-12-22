@@ -48,7 +48,11 @@ pub fn get_root() -> anyhow::Result<PathBuf> {
 
     let (root, _args) = spawn(&args, &current_dir);
 
-    run(root?, &args).map(|result| result.into())
+    let m = run(root?, &args);
+
+    dbg!(&m);
+
+    m.map(|result| result.into())
 }
 
 pub fn git(args: &[&str]) -> anyhow::Result<String> {
