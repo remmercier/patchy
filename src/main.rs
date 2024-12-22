@@ -24,6 +24,10 @@ macro_rules! success {
     }};
 }
 
+fn display_link(text: &str, url: &str) -> String {
+    format!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", url, text)
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     git(&["rev-parse", "--is-inside-work-tree"]).context("Not in a git repository")?;
@@ -82,7 +86,7 @@ async fn main() -> Result<()> {
         let response = match handle_request(request).await {
             Ok(response) => response,
             Err(err) => {
-                eprintln!("Could fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}");
+                eprintln!("Couldn't fetch required data from remote, skipping. #{pull_request}, skipping.\n{err}");
                 continue;
             }
         };
@@ -100,13 +104,16 @@ async fn main() -> Result<()> {
         .await
         {
             eprintln!(
-                "Could not merge remote branch from pull request #{pull_request}, skipping.\n{err}"
+                "Couldn't merge remote branch from pull request #{pull_request}, skipping.\n{err}"
             );
             continue;
         } else {
             let success_message = success!(
-                "Merged pull request #{pull_request} {}",
-                response.title.black()
+                "Merged pull request {}",
+                display_link(
+                    &format!("{} {}", response.title.blue(), pull_request.blue()),
+                    &response.html_url
+                ),
             );
             println!("{success_message}")
         }
