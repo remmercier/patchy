@@ -43,7 +43,7 @@ async fn main() -> Result<()> {
     } else {
         match subcommand.as_str() {
             // main commands
-            "init" => init(&args)?,
+            "init" => init(&args, &root)?,
             "run" => run(&args, &root, &git).await?,
             "gen-patch" => gen_patch(&args)?,
             // lower level commands

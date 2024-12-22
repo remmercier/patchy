@@ -1,4 +1,8 @@
-use std::{fs, path};
+use std::{
+    fs::{self, File},
+    io::Write,
+    path,
+};
 
 use crate::{
     backup::{backup_files, restore_backup},
@@ -268,7 +272,21 @@ pub fn help(_args: &CommandArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn init(_args: &CommandArgs) -> anyhow::Result<()> {
+pub fn init(_args: &CommandArgs, root: &path::Path) -> anyhow::Result<()> {
+    let example_config = include_bytes!("../example-config.toml");
+
+    let config_path = root.join(CONFIG_ROOT);
+
+    let config_file_path = config_path.join(CONFIG_FILE);
+
+    let _ = fs::create_dir(config_path);
+
+    let mut file = File::create(&config_file_path)?;
+
+    file.write_all(example_config)?;
+
+    println!("{}", success!("Created config file {config_file_path:?}"));
+
     Ok(())
 }
 
