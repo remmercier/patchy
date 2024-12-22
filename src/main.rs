@@ -183,7 +183,7 @@ async fn main() -> Result<()> {
     );
 
     let command = format!(
-        "{}{}{}",
+        "{} {} {}",
         "git branch --move --force".blue(),
         temporary_branch.blue(),
         config.local_branch.blue()
@@ -195,9 +195,10 @@ async fn main() -> Result<()> {
         .with_prompt(format!(
             "Almost done, would you like us to run this command for you?\n{command}\n{warning}",
         ))
-        .interact();
+        .interact()
+        .unwrap();
 
-    if confirmation.is_ok_and(std::convert::identity) {
+    if confirmation {
         // forcefully renames the branch we are currently on into the branch specified by the user.
         // WARNING: this is a destructive action which erases the original branch
         git(&[
