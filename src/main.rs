@@ -32,7 +32,9 @@ fn display_link(text: &str, url: &str) -> String {
     format!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", url, text)
 }
 
-async fn run(_args: Args) -> Result<()> {
+async fn run(_args: &Args) -> Result<()> {
+    println!();
+
     let config_path = env::current_dir().map(|cd| cd.join(CONFIG_ROOT))?;
 
     let config_file_path = config_path.join(CONFIG_FILE);
@@ -223,7 +225,7 @@ async fn run(_args: Args) -> Result<()> {
 
 type Args = HashSet<String>;
 
-fn help(_args: Args) -> Result<()> {
+fn help(_args: &Args) -> Result<()> {
     let version = env!("CARGO_PKG_VERSION");
     let app_name = env!("CARGO_PKG_NAME");
     fn subcommand(command: &str, args: &str, description: &str) -> String {
@@ -271,7 +273,7 @@ fn help(_args: Args) -> Result<()> {
     );
 
     println!(
-        "\
+        "
 {app_name} {version}
 
 {usage}
@@ -296,35 +298,62 @@ Flags:
     Ok(())
 }
 
-fn init(_args: Args) -> Result<()> {
+fn init(_args: &Args) -> Result<()> {
     Ok(())
 }
 
-fn gen_patch(_args: Args) -> Result<()> {
+fn gen_patch(_args: &Args) -> Result<()> {
     Ok(())
 }
 
-fn pr_fetch(_args: Args) -> Result<()> {
+fn pr_fetch(_args: &Args) -> Result<()> {
     Ok(())
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!();
-
     let mut args = env::args();
     let _command_name = args.next();
     let subcommand = args.next().unwrap_or_default();
 
-    let args: Args = args.collect();
+    let mut args: Args = args.collect();
 
-    match subcommand.as_str() {
-        // main commands
-        "init" => init(args),
-        "run" => run(args).await,
-        "gen-patch" => gen_patch(args),
-        // lower level commands
-        "pr-fetch" => pr_fetch(args),
-        _ => help(args),
+    if subcommand.starts_with("-") {
+        args.insert(subcommand.clone());
+    }
+
+    if args.contains("-h") || args.contains("--help") {
+        help(&args)
+    } else if args.contains("-v") || args.contains("--version") {
+        print!("{}", env!("CARGO_PKG_VERSION"));
+
+        Ok(())
+    } else {
+        match subcommand.as_str() {
+            // main commands
+            "init" => init(&args)?,
+            "run" => run(&args).await?,
+            "gen-patch" => gen_patch(&args)?,
+            // lower level commands
+            "pr-fetch" => pr_fetch(&args)?,
+            unrecognized => {
+                let unknown = if unrecognized.starts_with("-") {
+                    "flag".red()
+                } else {
+                    "command".red()
+                };
+
+                eprintln!(
+                    "{}{unknown}{}{}",
+                    "Unknown ".red(),
+                    ": ".red(),
+                    unrecognized.red()
+                );
+                help(&args)?;
+                std::process::exit(1)
+            }
+        }
+
+        Ok(())
     }
 }
