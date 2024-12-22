@@ -65,9 +65,11 @@ pub fn add_remote_branch(
     }
 }
 
-pub fn checkout(branch: &str, remote: &str) -> anyhow::Result<()> {
+pub fn checkout_from_remote(branch: &str, remote: &str) -> anyhow::Result<String> {
+    let current_branch = git(&["rev-parse", "--abbrev-ref", "HEAD"])?;
+
     match git(&["checkout", branch]) {
-        Ok(_) => Ok(()),
+        Ok(_) => Ok(current_branch),
         Err(err) => {
             git(&["branch", "-D", branch])?;
             git(&["remote", "remove", remote])?;

@@ -2,7 +2,7 @@ use std::{fs, path};
 
 use crate::{
     backup::{backup_files, restore_backup},
-    git_commands::{add_remote_branch, checkout, merge_into_main},
+    git_commands::{add_remote_branch, checkout_from_remote, merge_into_main},
     types::{CommandArgs, Configuration},
     utils::{display_link, make_request, with_uuid},
     APP_NAME, CONFIG_FILE, CONFIG_ROOT, INDENT,
@@ -57,7 +57,7 @@ pub async fn run(
         &config.remote_branch,
     )?;
 
-    checkout(&local_branch, &local_remote)?;
+    let previous_branch = checkout_from_remote(&local_branch, &local_remote)?;
 
     let client = reqwest::Client::new();
 
@@ -128,6 +128,7 @@ pub async fn run(
     if let Err(err) = fs::create_dir(root) {
         git(&["remote", "remove", &local_remote])?;
         git(&["branch", "--delete", "--force", &local_branch])?;
+        git(&["checkout", &previous_branch])?;
         return Err(anyhow::anyhow!(err));
     };
 
