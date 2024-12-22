@@ -14,7 +14,7 @@ use types::CommandArgs;
 
 static CONFIG_ROOT: &str = ".patchy";
 static CONFIG_FILE: &str = "config.toml";
-static APP_NAME: &str = "patchy";
+static APP_NAME: &str = env!("CARGO_PKG_NAME");
 static INDENT: &str = "  ";
 
 #[tokio::main]

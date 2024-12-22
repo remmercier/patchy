@@ -216,8 +216,6 @@ pub async fn run(
 }
 
 pub fn help(_args: &CommandArgs) -> anyhow::Result<()> {
-    let version = env!("CARGO_PKG_VERSION");
-    let app_name = env!("CARGO_PKG_NAME");
     fn subcommand(command: &str, args: &str, description: &str) -> String {
         let command = command.yellow();
         let args = args.green();
@@ -239,46 +237,14 @@ pub fn help(_args: &CommandArgs) -> anyhow::Result<()> {
         format!("{flags}\n    {} {description}", "»".black())
     }
 
-    let init = subcommand("init", "", "Create example config file");
-    let pr_fetch = subcommand(
-        "pr-fetch",
-        " <repo-link> <pr-number>",
-        "Fetch pull request for a GitHub repository as a local branch",
-    );
-    let gen_patch = subcommand(
-        "gen-patch",
-        " <commit-hash>...",
-        "Generate a .patch file from commit hashes",
-    );
-    let run = subcommand("run", "", &format!("Start {app_name}"));
-
-    let help_flag = flags(&["-h", "--help"], "print this message");
-    let version_flag = flags(&["-v", "--version"], "get package version");
-
-    let usage = format!(
-        "  Usage:\n\n    {} {} {} {}",
-        APP_NAME.blue(),
-        "[<flags>]".magenta(),
-        "<command>".yellow(),
-        "[<args>]".green(),
-    );
-
-    let app_name = app_name.blue();
-
-    let author = format!(
-        "{}{}{}{}",
-        "  Nikita Revenco ".italic(),
-        "<".black().italic(),
-        "pm@nikitarevenco.com".italic(),
-        ">".black().italic()
-    );
-
     println!(
         "
   {app_name} {version}
-{author}
+  {author}{less_than}{email}{greater_than}
 
-{usage}
+  Usage:
+
+      {app_name} {flags} {command} {args}
 
   Commands:
 
@@ -295,8 +261,32 @@ pub fn help(_args: &CommandArgs) -> anyhow::Result<()> {
     {help_flag}
 
     {version_flag}
-"
+",
+        author = "Nikita Revenco ".italic(),
+        less_than = "<".black().italic(),
+        email = "pm@nikitarevenco.com".italic(),
+        greater_than = ">".black().italic(),
+        app_name = APP_NAME.blue(),
+        flags = "[<flags>]".magenta(),
+        command = "<command>".yellow(),
+        args = "[<args>]".green(),
+        version = env!("CARGO_PKG_VERSION"),
+        init = subcommand("init", "", "Create example config file"),
+        pr_fetch = subcommand(
+            "pr-fetch",
+            " <repo-link> <pr-number>",
+            "Fetch pull request for a GitHub repository as a local branch",
+        ),
+        gen_patch = subcommand(
+            "gen-patch",
+            " <commit-hash>...",
+            "Generate a .patch file from commit hashes",
+        ),
+        run = subcommand("run", "", &format!("Start {APP_NAME}")),
+        help_flag = flags(&["-h", "--help"], "print this message"),
+        version_flag = flags(&["-v", "--version"], "get package version"),
     );
+
     Ok(())
 }
 
