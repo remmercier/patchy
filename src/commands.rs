@@ -261,6 +261,8 @@ pub fn help(_args: &CommandArgs) -> anyhow::Result<()> {
         args = "[<args>]".green(),
         version = env!("CARGO_PKG_VERSION"),
         init = subcommand("init", "", "Create example config file"),
+        // TODO: --checkout, -c flag to checkout the fetched pull request
+        // --branch-name, -b flag to choose name of branch
         pr_fetch = subcommand(
             "pr-fetch",
             " <repo-link> <pr-numbers>...",
