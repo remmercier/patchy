@@ -47,7 +47,7 @@ async fn process_subcommand(
                 )
             }
 
-            help(&args)?;
+            help(&args, None)?;
         }
     }
 
@@ -68,11 +68,12 @@ async fn main() -> Result<()> {
     let mut args: CommandArgs = args.collect();
 
     if subcommand.starts_with("-") {
+        // We're not using any command, only flags
         args.insert(subcommand.clone());
     }
 
     if args.contains("-h") || args.contains("--help") {
-        help(&args)
+        help(&args, Some(&subcommand))
     } else if args.contains("-v") || args.contains("--version") {
         print!("{}", env!("CARGO_PKG_VERSION"));
 
