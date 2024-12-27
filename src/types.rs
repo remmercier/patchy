@@ -32,3 +32,37 @@ pub struct Head {
 pub struct Repo {
     pub clone_url: String,
 }
+
+pub struct Branch {
+    pub local_name: String,
+    pub remote_name: String,
+}
+
+pub struct Remote {
+    pub local_name: String,
+    pub remote_name: String,
+}
+
+pub struct BranchAndRemote {
+    pub branch: Branch,
+    pub remote: Remote,
+}
+
+impl BranchAndRemote {
+    pub fn new(
+        local_branch: &str,
+        remote_branch: &str,
+        local_remote: &str,
+        remote_remote: &str,
+    ) -> Self {
+        let branch = Branch {
+            local_name: local_branch.into(),
+            remote_name: remote_branch.into(),
+        };
+        let remote = Remote {
+            local_name: local_remote.into(),
+            remote_name: remote_remote.into(),
+        };
+        Self { branch, remote }
+    }
+}

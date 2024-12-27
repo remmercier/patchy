@@ -3,6 +3,15 @@ use std::{
     process::Output,
 };
 
+use anyhow::Context;
+use reqwest::Client;
+
+use crate::{
+    types::{BranchAndRemote, GitHubResponse},
+    utils::{make_request, normalize_pr_title, with_uuid},
+    APP_NAME,
+};
+
 pub fn get_git_output(output: Output, args: &[&str]) -> anyhow::Result<String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout)
@@ -102,4 +111,67 @@ pub fn merge_into_main(
             Ok("Merged {remote_branch} successfully and disregarded conflicts".into())
         }
     }
+}
+
+pub async fn merge_pull_request(
+    info: BranchAndRemote,
+    git: &impl Fn(&[&str]) -> anyhow::Result<String>,
+) -> anyhow::Result<()> {
+    merge_into_main(&info.branch.local_name, &info.branch.remote_name).context(
+        "Could not merge branch into the current branch for pull request #{pull_request}, skipping",
+    )?;
+
+    let has_unstaged_changes = git(&["diff", "--cached", "--quiet"]).is_err();
+
+    if has_unstaged_changes {
+        git(&[
+            "commit",
+            "--message",
+            &format!(
+                "{APP_NAME}: Merge branch {} of {}",
+                &info.branch.remote_name, &info.remote.remote_name
+            ),
+        ])?;
+    }
+
+    git(&["remote", "remove", &info.remote.local_name])?;
+    git(&["branch", "--delete", "--force", &info.branch.local_name])?;
+
+    Ok(())
+}
+
+pub async fn fetch_pull_request(
+    repo: &str,
+    pull_request: &str,
+    client: &Client,
+) -> anyhow::Result<(GitHubResponse, BranchAndRemote)> {
+    let url = format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo);
+
+    let response = make_request(client, &url).await.context(format!(
+        "Couldn't fetch required data from remote, skipping. #{pull_request}. Url fetched: {url}"
+    ))?;
+
+    let remote_remote = &response.head.repo.clone_url;
+
+    let local_remote = with_uuid(&format!(
+        "{title}-{}",
+        pull_request,
+        title = normalize_pr_title(&response.html_url)
+    ));
+
+    let remote_branch = &response.head.r#ref;
+
+    let local_branch = with_uuid(&format!(
+        "{title}-{}",
+        pull_request,
+        title = normalize_pr_title(&response.title)
+    ));
+
+    add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch).context(
+        format!("Could not add remove branch for pull request #{pull_request}, skipping"),
+    )?;
+
+    let info = BranchAndRemote::new(&local_branch, remote_branch, &local_remote, remote_remote);
+
+    Ok((response, info))
 }

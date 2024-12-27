@@ -63,3 +63,17 @@ pub async fn make_request(client: &Client, url: &str) -> anyhow::Result<GitHubRe
         Err(err) => Err(anyhow!("Error sending request: {err}")),
     }
 }
+
+#[macro_export]
+macro_rules! success {
+    ($($arg:tt)*) => {{
+        println!("{INDENT}{}{}", "✓ ".bright_green().bold(), format!($($arg)*))
+    }};
+}
+
+#[macro_export]
+macro_rules! fail {
+    ($($arg:tt)*) => {{
+        eprintln!("{INDENT}{}{}", "✗ ".bright_red().bold(), format!($($arg)*))
+    }};
+}
