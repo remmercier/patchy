@@ -1,3 +1,4 @@
+use crate::fail;
 use crate::git_commands::fetch_pull_request;
 use crate::success;
 use crate::utils::display_link;
@@ -5,24 +6,47 @@ use crate::CommandArgs;
 use crate::INDENT;
 use colored::Colorize;
 
+fn is_valid_branch_name(branch_name: &str) -> bool {
+    branch_name
+        .chars()
+        .all(|ch| ch.is_alphanumeric() || ch == '.' || ch == '-' || ch == '/' || ch == '_')
+}
+
 pub async fn pr_fetch(
     args: &CommandArgs,
     _git: impl Fn(&[&str]) -> anyhow::Result<String>,
 ) -> anyhow::Result<()> {
-    let mut args = args.iter();
-    let repo = match args.next() {
-        Some(repo) => repo,
-        None => {
-            return Err(anyhow::anyhow!(
-                "Please provide a repo-owner/repo for example: helix-editor/helix"
-            ))
-        }
-    };
+    let mut args = args.iter().peekable();
+
+    let mut pull_requests_with_maybe_custom_branch_names = vec![];
+
+    while let Some(arg) = args.next() {
+        let next = args.peek();
+        let maybe_custom_branch_name: Option<&str> = next.and_then(|next_arg| {
+            let range = if next_arg.starts_with("-b=") {
+                3..
+            } else if next_arg.starts_with("--branch-name=") {
+                14..
+            } else {
+                return None;
+            };
+
+            next_arg
+                .get(range)
+                .filter(|branch_name| is_valid_branch_name(branch_name))
+        });
+
+        if maybe_custom_branch_name.is_some() {
+            args.next();
+        };
+
+        pull_requests_with_maybe_custom_branch_names.push((arg, maybe_custom_branch_name));
+    }
 
     let client = reqwest::Client::new();
 
-    for pull_request in args {
-        match fetch_pull_request(repo, pull_request, &client).await {
+    for (pull_request, maybe_custom_branch_name) in pull_requests_with_maybe_custom_branch_names {
+        match fetch_pull_request(repo, pull_request, &client, maybe_custom_branch_name).await {
             Ok((response, info)) => {
                 success!(
                     "Fetched pull request {} available at branch {}",
@@ -39,7 +63,7 @@ pub async fn pr_fetch(
                 )
             }
             Err(err) => {
-                eprintln!("{err:#?}");
+                fail!("{err:#?}");
                 continue;
             }
         };

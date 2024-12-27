@@ -142,7 +142,7 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
             );
             let remote_name_flag = flags(
                 &["-r=<name>", "--remote-name=<name>"],
-                "Choose a remote, by default it uses the `origin` remote of the current repository",
+                "Choose a github repository, by default it uses the `origin` remote of the current repository",
             );
             let this_command_name = format!("{app_name} {}", cmd_name.yellow());
 

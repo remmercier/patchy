@@ -64,7 +64,7 @@ pub async fn run(
     // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads
     for pull_request in config.pull_requests.iter() {
         // TODO: refactor this to not use such horrible nesting
-        match fetch_pull_request(&config.repo, pull_request, &client).await {
+        match fetch_pull_request(&config.repo, pull_request, &client, None).await {
             Ok((response, info)) => {
                 match merge_pull_request(info, &git).await {
                     Ok(()) => {

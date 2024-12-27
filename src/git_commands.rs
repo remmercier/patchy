@@ -144,6 +144,7 @@ pub async fn fetch_pull_request(
     repo: &str,
     pull_request: &str,
     client: &Client,
+    custom_branch_name: Option<&str>,
 ) -> anyhow::Result<(GitHubResponse, BranchAndRemote)> {
     let url = format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo);
 
@@ -161,11 +162,13 @@ pub async fn fetch_pull_request(
 
     let remote_branch = &response.head.r#ref;
 
-    let local_branch = with_uuid(&format!(
-        "{title}-{}",
-        pull_request,
-        title = normalize_pr_title(&response.title)
-    ));
+    let local_branch = custom_branch_name
+        .map(|s| s.into())
+        .unwrap_or(with_uuid(&format!(
+            "{title}-{}",
+            pull_request,
+            title = normalize_pr_title(&response.title)
+        )));
 
     add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch).context(
         format!("Could not add remove branch for pull request #{pull_request}, skipping"),
