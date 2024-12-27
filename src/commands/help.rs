@@ -48,13 +48,90 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
   {author}{less_than}{email}{greater_than}"
     );
     let help_flag = flags(&["-h", "--help"], "Print this message");
-    let version_flag = flags(&["-v", "--version"], "get package version");
+    let version_flag = flags(&["-v", "--version"], "Get package version");
 
     match command {
-        Some("init") => (),
-        Some("run") => (),
-        Some("gen-patch") => (),
-        Some("pr-fetch") => {
+        Some(cmd_name) if cmd_name == "init" => {
+            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
+
+            let description = make_description("Create example config file");
+
+            println!(
+                "
+{header}
+        
+  Usage:
+
+    {this_command_name}
+    {description}
+
+  Flags:
+
+    {help_flag}
+",
+            );
+        }
+        Some(cmd_name) if cmd_name == "run" => {
+            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
+
+            let description = make_description("Create example config file");
+
+            println!(
+                "
+{header}
+        
+  Usage:
+
+    {this_command_name}
+    {description}
+
+  Flags:
+
+    {help_flag}
+",
+            );
+        }
+        Some(cmd_name) if cmd_name == "gen-patch" => {
+            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
+
+            let description = make_description("Generate a .patch file from commit hashes");
+
+            let example_1 = format!(
+                "{}
+    {}",
+                "133cbaae83f710b793c98018cea697a04479bbe4".green(),
+                make_description("Generate a single .patch file from one commit hash")
+            );
+
+            let example_2 = format!(
+                "{}
+    {}",
+                "133cbaae83f710b793c98018cea697a04479bbe4 9ad5aa637ccf363b5d6713f66d0c2830736c35a9 cc75a895f344cf2fe83eaf6d78dfb7aeac8b33a4".green(),
+                make_description("Generate a several .patch files from one commit hashes")
+            );
+
+            println!(
+                "
+{header}
+        
+  Usage:
+
+    {this_command_name}
+    {description}
+
+  Examples:
+
+    {this_command_name} {example_1}
+
+    {this_command_name} {example_2}
+
+  Flags:
+
+    {help_flag}
+",
+            );
+        }
+        Some(cmd_name) if cmd_name == "pr-fetch" => {
             let branch_name_flag = flags(
                 &["-b=<name>", "--branch-name=<name>"],
                 "Choose name for the branch fetched pull request",
@@ -67,7 +144,7 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
                 &["-r=<name>", "--remote-name=<name>"],
                 "Choose a remote, by default it uses the `origin` remote of the current repository",
             );
-            let this_command_name = format!("{app_name} {}", "pr-fetch".yellow());
+            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
 
             let example_1 = format!(
                 "{}
