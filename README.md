@@ -109,6 +109,9 @@ patches = ["remove-tab"]
 
 Running `patchy run` outputs:
 
+![patchy output](https://github.com/user-attachments/assets/c0076588-6e57-4a80-9d05-955a4dff2580)
+
+
 With this, all I will need to do is run `patchy run` and it will automatically update all of the pull requests and sync the master branch to the latest changes.
 
 ## Installation
