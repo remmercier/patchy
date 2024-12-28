@@ -12,6 +12,15 @@ use crate::{
     APP_NAME,
 };
 
+pub fn is_valid_branch_name(branch_name: &str) -> bool {
+    branch_name
+        .chars()
+        .all(|ch| ch.is_alphanumeric() || ch == '.' || ch == '-' || ch == '/' || ch == '_')
+}
+
+pub static GITHUB_REMOTE_PREFIX: &str = "git@github.com:";
+pub static GITHUB_REMOTE_SUFFIX: &str = ".git";
+
 pub fn get_git_output(output: Output, args: &[&str]) -> anyhow::Result<String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout)

@@ -1,22 +1,14 @@
-use crate::git_commands::fetch_pull_request;
+use crate::fail;
+use crate::flags::{extract_value_from_flag, Flag};
+use crate::git_commands::{
+    fetch_pull_request, is_valid_branch_name, GITHUB_REMOTE_PREFIX, GITHUB_REMOTE_SUFFIX,
+};
 use crate::success;
 use crate::types::CommandArgs;
 use crate::utils::display_link;
 use crate::INDENT;
-use crate::{extract_value_from_flag, fail};
 use anyhow::anyhow;
 use colored::Colorize;
-
-fn is_valid_branch_name(branch_name: &str) -> bool {
-    branch_name
-        .chars()
-        .all(|ch| ch.is_alphanumeric() || ch == '.' || ch == '-' || ch == '/' || ch == '_')
-}
-
-pub struct Flag<'a> {
-    pub short: &'a str,
-    pub long: &'a str,
-}
 
 static PR_FETCH_BRANCH_NAME_FLAG: Flag<'static> = Flag {
     short: "-b=",
@@ -27,9 +19,6 @@ static PR_FETCH_REMOTE_NAME_FLAG: Flag<'static> = Flag {
     short: "-r=",
     long: "--remote-name=",
 };
-
-static GITHUB_REMOTE_PREFIX: &str = "git@github.com:";
-static GITHUB_REMOTE_SUFFIX: &str = ".git";
 
 pub async fn pr_fetch(
     args: &CommandArgs,
@@ -45,28 +34,10 @@ pub async fn pr_fetch(
         if let Some(flag) = extract_value_from_flag(arg, &PR_FETCH_REMOTE_NAME_FLAG) {
             remote_name = Some(flag);
         }
-        // if arg.starts_with(PR_FETCH_REMOTE_NAME_FLAG.short) {
-        //     remote_name = arg
-        //         .get(PR_FETCH_REMOTE_NAME_FLAG.short.len()..)
-        //         .map(|m| m.into())
-        // } else if arg.starts_with(PR_FETCH_REMOTE_NAME_FLAG.long) {
-        //     remote_name = arg
-        //         .get(PR_FETCH_REMOTE_NAME_FLAG.long.len()..)
-        //         .map(|m| m.into())
-        // }
 
         let next_arg = args.peek();
-        let maybe_custom_branch_name: Option<&str> = next_arg.and_then(|next_arg| {
-            let range = if next_arg.starts_with(PR_FETCH_BRANCH_NAME_FLAG.short) {
-                PR_FETCH_BRANCH_NAME_FLAG.short.len()..
-            } else if next_arg.starts_with(PR_FETCH_BRANCH_NAME_FLAG.long) {
-                PR_FETCH_BRANCH_NAME_FLAG.long.len()..
-            } else {
-                return None;
-            };
-
-            next_arg
-                .get(range)
+        let maybe_custom_branch_name: Option<String> = next_arg.and_then(|next_arg| {
+            extract_value_from_flag(next_arg, &PR_FETCH_BRANCH_NAME_FLAG)
                 .filter(|branch_name| is_valid_branch_name(branch_name))
         });
 
@@ -83,13 +54,13 @@ pub async fn pr_fetch(
         if remote.starts_with(GITHUB_REMOTE_PREFIX) && remote.ends_with(GITHUB_REMOTE_SUFFIX) {
             let start = GITHUB_REMOTE_PREFIX.len();
             let end = remote.len() - GITHUB_REMOTE_SUFFIX.len();
-            remote_name = remote.get(start..end).map(|m| m.into());
+            remote_name = remote.get(start..end).map(|remote| remote.into());
         };
     }
 
     let Some(remote_name) = remote_name else {
         return Err(anyhow!(
-            "Could not get the remote, it should be in the form helix-editor/helix.",
+            "Could not get the remote, it should be in the form e.g. helix-editor/helix.",
         ));
     };
 
@@ -100,7 +71,7 @@ pub async fn pr_fetch(
             &remote_name,
             pull_request,
             &client,
-            maybe_custom_branch_name,
+            maybe_custom_branch_name.as_deref(),
         )
         .await
         {
