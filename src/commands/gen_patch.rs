@@ -10,7 +10,7 @@ use crate::{
     git_commands::is_valid_branch_name,
     success,
     types::CommandArgs,
-    utils::normalize_pr_title,
+    utils::normalize_commit_msg,
 };
 use crate::{CONFIG_ROOT, INDENT};
 use colored::Colorize;
@@ -22,8 +22,8 @@ static GEN_PATCH_NAME: Flag<'static> = Flag {
 
 pub fn gen_patch(
     args: &CommandArgs,
-    git: impl Fn(&[&str]) -> anyhow::Result<String>,
     root: &path::Path,
+    git: impl Fn(&[&str]) -> anyhow::Result<String>,
 ) -> anyhow::Result<()> {
     let mut args = args.iter().peekable();
     let mut commit_hashes_with_maybe_custom_patch_filenames = vec![];
@@ -69,7 +69,7 @@ pub fn gen_patch(
         // 3. if all fails use the commit hash
         let patch_filename = maybe_custom_patch_name.unwrap_or({
             git(&["log", "--format=%B", "-n", "1", patch_commit_hash])
-                .map(|commit_msg| normalize_pr_title(&commit_msg))
+                .map(|commit_msg| normalize_commit_msg(&commit_msg))
                 .unwrap_or(patch_commit_hash.to_string())
         });
 

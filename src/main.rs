@@ -18,7 +18,7 @@ async fn process_subcommand(
         // main commands
         "init" => init(&args, root)?,
         "run" => run(&args, root, &git).await?,
-        "gen-patch" => gen_patch(&args)?,
+        "gen-patch" => gen_patch(&args, root, git)?,
         // lower level commands
         "pr-fetch" => pr_fetch(&args, &git).await?,
         unrecognized => {

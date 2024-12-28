@@ -8,7 +8,7 @@ use reqwest::Client;
 
 use crate::{
     types::{BranchAndRemote, GitHubResponse},
-    utils::{make_request, normalize_pr_title, with_uuid},
+    utils::{make_request, normalize_commit_msg, with_uuid},
     APP_NAME,
 };
 
@@ -167,7 +167,7 @@ Url fetched: {url}"
     let local_remote = with_uuid(&format!(
         "{title}-{}",
         pull_request,
-        title = normalize_pr_title(&response.html_url)
+        title = normalize_commit_msg(&response.html_url)
     ));
 
     let remote_branch = &response.head.r#ref;
@@ -177,7 +177,7 @@ Url fetched: {url}"
         .unwrap_or(with_uuid(&format!(
             "{title}-{}",
             pull_request,
-            title = normalize_pr_title(&response.title)
+            title = normalize_commit_msg(&response.title)
         )));
 
     add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch).context(
