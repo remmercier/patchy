@@ -1,51 +1,25 @@
-# Main github repository to fetch from.
-# This is going to be our base, into which we merge patches and pull requests.
-#
-# Examples
-# 
-# repo = "helix-editor/helix"
-# repo = "microsoft/vscode"
+# main repository to fetch from
+repo = "helix-editor/helix"
 
-repo = ""
+# the repository's branch
+remote-branch = "master"
 
-# The main repository's branch
-# 
-# Examples
-#
-# remote-branch = "master"
-# remote-branch = "main"
-
-remote-branch = "main"
-
-# Branch which patchy will use to do all of its work on
-#
-# Examples
-#
-# local-branch = "some-branch-1234"
-
+# This is the branch where you will see all result from patchy's work. Set it to any branch you want.
+# WARNING: Make sure you do not store any important work on this branch. It will be erased.
 local-branch = "patchy"
 
-# list of pull requests numbers which you would like to merge into the repository and branch you have specified previously
-#
-# Examples
-#
-# pull-requests = [ "12254", "10000", "8145"]
+# List of pull requests which you would like to merge
+# TIP: Add comments above pull requests to help yourself understand which PRs do what
+pull-requests = [
+  # syntax highlighting for nginx files
+  "12309",
+  # adds file explorer
+  "11285",
+  # global status line
+  "8908",
+  # command expansions
+  "11164",
+]
 
-pull-requests = []
-
-# Optional: A list of patches to apply
-#
-# A patch allows you to do specify custom commits and not have to rely on there being a pull request for that change
-#
-# You can generate patches from a commit with: `patchy gen-patch <commit-id>`. See `patchy --help` for more info.
-#
-# Examples
-#
-# With the below config, patchcy will look for the following files:
-# - `.patchy/my-patch123.patch`
-# - `.patchy/another-patch.patch`
-# - `.patchy/1234.patch`
-#
-# patches = [ "my-patch123", "another-patch", "1234" ]
-
-# patches = []
+# A list of patches to apply
+patches = ["remove-tab"]
