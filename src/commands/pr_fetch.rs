@@ -8,6 +8,7 @@ use crate::types::CommandArgs;
 use crate::utils::display_link;
 use crate::INDENT;
 use anyhow::anyhow;
+use colored::control::SHOULD_COLORIZE;
 use colored::Colorize;
 
 static PR_FETCH_BRANCH_NAME_FLAG: Flag<'static> = Flag {
@@ -20,10 +21,18 @@ static PR_FETCH_REMOTE_NAME_FLAG: Flag<'static> = Flag {
     long: "--remote-name=",
 };
 
+static PR_FETCH_CHECKOUT_FLAG: Flag<'static> = Flag {
+    short: "-c",
+    long: "--checkout",
+};
+
 pub async fn pr_fetch(
     args: &CommandArgs,
     git: impl Fn(&[&str]) -> anyhow::Result<String>,
 ) -> anyhow::Result<()> {
+    let checkout_flag =
+        args.contains(PR_FETCH_CHECKOUT_FLAG.short) || args.contains(PR_FETCH_CHECKOUT_FLAG.long);
+
     let mut args = args.iter().peekable();
 
     let mut pull_requests_with_maybe_custom_branch_names = vec![];
@@ -66,7 +75,11 @@ pub async fn pr_fetch(
 
     let client = reqwest::Client::new();
 
-    for (pull_request, maybe_custom_branch_name) in pull_requests_with_maybe_custom_branch_names {
+    for (i, (pull_request, maybe_custom_branch_name)) in
+        pull_requests_with_maybe_custom_branch_names
+            .iter()
+            .enumerate()
+    {
         match fetch_pull_request(
             &remote_name,
             pull_request,
@@ -88,7 +101,18 @@ pub async fn pr_fetch(
                         &response.html_url
                     ),
                     info.branch.local_name.cyan()
-                )
+                );
+
+                if i == 0 && checkout_flag {
+                    if git(&["checkout", &info.branch.local_name]).is_ok() {
+                        success!(
+                            "Automatically checked out the first branch: {}",
+                            info.branch.local_name
+                        )
+                    } else {
+                        fail!("Could not check out branch {}", info.branch.local_name)
+                    }
+                }
             }
             Err(err) => {
                 fail!("{err:#?}");
