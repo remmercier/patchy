@@ -15,9 +15,10 @@ use crate::{
 use crate::{CONFIG_ROOT, INDENT};
 use colored::Colorize;
 
-static GEN_PATCH_NAME: Flag<'static> = Flag {
+pub static GEN_PATCH_NAME_FLAG: Flag<'static> = Flag {
     short: "-n=",
-    long: "--patch-name=",
+    long: "--patch-filename=",
+    description: "Choose filename for the patch",
 };
 
 pub fn gen_patch(
@@ -33,7 +34,7 @@ pub fn gen_patch(
     while let Some(arg) = args.next() {
         let next_arg = args.peek();
         let maybe_custom_patch_filename: Option<String> = next_arg.and_then(|next_arg| {
-            extract_value_from_flag(next_arg, &GEN_PATCH_NAME)
+            extract_value_from_flag(next_arg, &GEN_PATCH_NAME_FLAG)
                 .filter(|branch_name| is_valid_branch_name(branch_name))
         });
 

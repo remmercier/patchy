@@ -1,30 +1,35 @@
 use colored::Colorize;
 
-use crate::{types::CommandArgs, APP_NAME};
+use crate::{
+    commands::{
+        gen_patch::GEN_PATCH_NAME_FLAG,
+        pr_fetch::{PR_FETCH_BRANCH_NAME_FLAG, PR_FETCH_CHECKOUT_FLAG, PR_FETCH_REPO_NAME_FLAG},
+    },
+    flags::{format_flag, Flag},
+    types::CommandArgs,
+    APP_NAME,
+};
 
 fn subcommand(command: &str, description: &str) -> String {
     let command = command.yellow();
     format!("{command}\n    {}", make_description(description))
 }
 
-fn make_description(description: &str) -> String {
+pub fn make_description(description: &str) -> String {
     format!("{} {description}", "»".black())
 }
 
-fn flags(flags: &[&str; 2], description: &str) -> String {
-    let flags: Vec<_> = flags.iter().map(|flag| flag.magenta()).collect();
-    let flag1 = &flags[0];
-    let flag2 = &flags[1];
-    let flags = format!(
-        "{flag1}{}{flag2}",
-        if *flag2 == "".into() {
-            "".into()
-        } else {
-            ", ".black()
-        }
-    );
-    format!("{flags}\n    {}", make_description(description))
-}
+static HELP_FLAG: Flag<'static> = Flag {
+    short: "-h",
+    long: "--help",
+    description: "Print this message",
+};
+
+static VERSION_FLAG: Flag<'static> = Flag {
+    short: "-v",
+    long: "--version",
+    description: "Get patchy version",
+};
 
 pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
     let author = "Nikita Revenco ".italic();
@@ -47,8 +52,8 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
         "  {app_name} {version}
   {author}{less_than}{email}{greater_than}"
     );
-    let help_flag = flags(&["-h", "--help"], "Print this message");
-    let version_flag = flags(&["-v", "--version"], "Get package version");
+    let help_flag = format_flag(&HELP_FLAG);
+    let version_flag = format_flag(&VERSION_FLAG);
 
     match command {
         Some(cmd_name) if cmd_name == "init" => {
@@ -94,6 +99,8 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
         Some(cmd_name) if cmd_name == "gen-patch" => {
             let this_command_name = format!("{app_name} {}", cmd_name.yellow());
 
+            let patch_filename_flag = format_flag(&GEN_PATCH_NAME_FLAG);
+
             let description = make_description("Generate a .patch file from commit hashes");
 
             let example_1 = format!(
@@ -107,7 +114,20 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
                 "{}
     {}",
                 "133cbaae83f710b793c98018cea697a04479bbe4 9ad5aa637ccf363b5d6713f66d0c2830736c35a9 cc75a895f344cf2fe83eaf6d78dfb7aeac8b33a4".green(),
-                make_description("Generate a several .patch files from one commit hashes")
+                make_description("Generate several .patch files from several commit hashes")
+            );
+
+            let example_3 = format!(
+                "{} {} {} {} {}
+    {}",
+                "133cbaae83f710b793c98018cea697a04479bbe4".green(),
+                "--patch-filename=some-patch".magenta(),
+                "9ad5aa637ccf363b5d6713f66d0c2830736c35a9".green(),
+                "--patch-filename=another-patch".magenta(),
+                "cc75a895f344cf2fe83eaf6d78dfb7aeac8b33a4".green(),
+                make_description(
+                    "Generate several .patch files from several commit hashes and give 2 of them custom names"
+                )
             );
 
             println!(
@@ -125,7 +145,11 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
 
     {this_command_name} {example_2}
 
+    {this_command_name} {example_3}
+
   Flags:
+
+    {patch_filename_flag}
 
     {help_flag}
 ",
@@ -170,18 +194,9 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
                 make_description("Fetch several pull requests, checkout the first one and use a custom github repo: https://github.com/helix-editor/helix")
             );
 
-            let branch_name_flag = flags(
-                &["-b=<name>", "--branch-name=<name>"],
-                "Choose local name for the branch belong to the preceding pull request",
-            );
-            let checkout_flag = flags(
-                &["-c", "--checkout"],
-                "Automatically check out the branch belonging to the first pull request",
-            );
-            let repo_name_flag = flags(
-                &["-r=<name>", "--repo-name=<name>"],
-                "Choose a github repository, using the `origin` remote of the current repository by default",
-            );
+            let branch_name_flag = format_flag(&PR_FETCH_BRANCH_NAME_FLAG);
+            let checkout_flag = format_flag(&PR_FETCH_CHECKOUT_FLAG);
+            let repo_name_flag = format_flag(&PR_FETCH_REPO_NAME_FLAG);
             let this_command_name = format!("{app_name} {}", cmd_name.yellow());
 
             println!(

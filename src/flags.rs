@@ -1,6 +1,11 @@
+use colored::Colorize;
+
+use crate::commands::help::make_description;
+
 pub struct Flag<'a> {
     pub short: &'a str,
     pub long: &'a str,
+    pub description: &'a str,
 }
 
 /// Extracts value out of a `flag` which can have an assignment
@@ -31,4 +36,15 @@ pub fn extract_value_from_flag(arg: &str, flag: &Flag) -> Option<String> {
     } else {
         None
     }
+}
+
+/// Formats a flag into a colored format with a description, printable to the terminal
+pub fn format_flag(flag: &Flag) -> String {
+    format!(
+        "{}{}{}\n    {}",
+        flag.short.magenta(),
+        ", ".black(),
+        flag.long.magenta(),
+        make_description(flag.description)
+    )
 }
