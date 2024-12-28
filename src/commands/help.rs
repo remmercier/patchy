@@ -56,7 +56,7 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
     let version_flag = format_flag(&VERSION_FLAG);
 
     match command {
-        Some(cmd_name) if cmd_name == "init" => {
+        Some(cmd_name @ "init") => {
             let this_command_name = format!("{app_name} {}", cmd_name.yellow());
 
             let description = format_description("Create example config file");
@@ -76,7 +76,7 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
 ",
             );
         }
-        Some(cmd_name) if cmd_name == "run" => {
+        Some(cmd_name @ "run") => {
             let this_command_name = format!("{app_name} {}", cmd_name.yellow());
 
             let description = format_description("Create example config file");
@@ -96,7 +96,7 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
 ",
             );
         }
-        Some(cmd_name) if cmd_name == "gen-patch" => {
+        Some(cmd_name @ "gen-patch") => {
             let this_command_name = format!("{app_name} {}", cmd_name.yellow());
 
             let patch_filename_flag = format_flag(&GEN_PATCH_NAME_FLAG);
@@ -155,7 +155,7 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
 ",
             );
         }
-        Some(cmd_name) if cmd_name == "pr-fetch" => {
+        Some(cmd_name @ "pr-fetch") => {
             let description = format_description("Fetch pull requests into a local branch");
 
             let example_1 = format!(
