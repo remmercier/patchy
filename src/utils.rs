@@ -15,16 +15,17 @@ pub fn with_uuid(s: &str) -> String {
     )
 }
 
-pub fn normalize_pr_title(pr_title: &str) -> String {
-    pr_title
+/// Converts a commit message to only contain lowercase characters, underscores and dashes
+pub fn normalize_commit_msg(commit_msg: &str) -> String {
+    commit_msg
         .chars()
-        .filter_map(|c| {
-            if c.is_alphanumeric() || c == '-' {
-                Some(c.to_ascii_lowercase())
+        .map(|c| {
+            if c.is_alphanumeric() {
+                c.to_ascii_lowercase()
             } else if c.is_whitespace() {
-                Some('-')
+                '_'
             } else {
-                None
+                '-'
             }
         })
         .collect()
