@@ -13,7 +13,13 @@ use colored::Colorize;
 pub static PR_FETCH_BRANCH_NAME_FLAG: Flag<'static> = Flag {
     short: "-b=",
     long: "--branch-name=",
-    description: "Choose local name for the branch belong to the preceding pull request",
+    description: "Choose local name for the branch belonging to the preceding pull request",
+};
+
+pub static PR_FETCH_CHECKOUT_FLAG: Flag<'static> = Flag {
+    short: "-c",
+    long: "--checkout",
+    description: "Check out the branch belonging to the first pull request",
 };
 
 pub static PR_FETCH_REPO_NAME_FLAG: Flag<'static> = Flag {
@@ -21,12 +27,6 @@ pub static PR_FETCH_REPO_NAME_FLAG: Flag<'static> = Flag {
     long: "--repo-name=",
     description:
         "Choose a github repository, using the `origin` remote of the current repository by default",
-};
-
-pub static PR_FETCH_CHECKOUT_FLAG: Flag<'static> = Flag {
-    short: "-c",
-    long: "--checkout",
-    description: "Automatically check out the branch belonging to the first pull request",
 };
 
 pub async fn pr_fetch(

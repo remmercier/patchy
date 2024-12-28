@@ -74,13 +74,18 @@ pub fn gen_patch(
                 .unwrap_or(patch_commit_hash.to_string())
         });
 
+        let patch_filename = format!("{patch_filename}.patch");
+
         let patch_file_path = config_path.join(&patch_filename);
 
         let mut file = File::create(&patch_file_path)?;
 
         file.write_all(patch_contents.as_bytes())?;
 
-        success!("Created patch file at {}", patch_filename)
+        success!(
+            "Created patch file at {}",
+            patch_file_path.to_string_lossy()
+        )
     }
 
     Ok(())
