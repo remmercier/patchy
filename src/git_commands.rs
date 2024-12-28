@@ -3,7 +3,7 @@ use std::{
     process::Output,
 };
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use reqwest::Client;
 
 use crate::{
@@ -157,10 +157,14 @@ pub async fn fetch_pull_request(
 ) -> anyhow::Result<(GitHubResponse, BranchAndRemote)> {
     let url = format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo);
 
-    let response = make_request(client, &url).await.context(format!(
-        "Couldn't fetch required data from remote for pull request #{pull_request}, skipping.
-Url fetched: {url}"
-    ))?;
+    let response = match make_request(client, &url).await {
+        Ok(res) => res,
+        Err(res) => {
+            return Err(anyhow!(
+                "Could not fetch pull request #{pull_request}\n{res}\n"
+            ))
+        }
+    };
 
     let remote_remote = &response.head.repo.clone_url;
 

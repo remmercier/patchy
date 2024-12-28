@@ -56,9 +56,7 @@ pub async fn make_request(client: &Client, url: &str) -> anyhow::Result<GitHubRe
             let text = res.text().await?;
 
             Err(anyhow!(
-                "Request failed with status {}\nResponse: {}",
-                status,
-                text
+                "Request failed with status: {status}\nRequested URL: {url}\nResponse: {text}",
             ))
         }
         Err(err) => Err(anyhow!("Error sending request: {err}")),

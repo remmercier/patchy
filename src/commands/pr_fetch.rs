@@ -118,7 +118,7 @@ pub async fn pr_fetch(
                 }
             }
             Err(err) => {
-                fail!("{err:#?}");
+                fail!("{err}");
                 continue;
             }
         };
