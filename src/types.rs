@@ -33,16 +33,19 @@ pub struct Repo {
     pub clone_url: String,
 }
 
+#[derive(Debug)]
 pub struct Branch {
     pub local_name: String,
     pub remote_name: String,
 }
 
+#[derive(Debug)]
 pub struct Remote {
     pub local_name: String,
     pub remote_name: String,
 }
 
+#[derive(Debug)]
 pub struct BranchAndRemote {
     pub branch: Branch,
     pub remote: Remote,

@@ -119,6 +119,11 @@ pub async fn pr_fetch(
                     info.branch.local_name.cyan()
                 );
 
+                // Attempt to cleanup after ourselves
+                let _ = git(&["remote", "remove", &info.remote.local_name]);
+                dbg!(&info);
+
+                // If user uses --checkout flag, we're going to checkout the first PR only
                 if i == 0 && checkout_flag {
                     if let Err(cant_checkout) = git(&["checkout", &info.branch.local_name]) {
                         fail!(
