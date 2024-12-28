@@ -46,6 +46,7 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     let local_branch = with_uuid(&config.remote_branch);
 
+    // TODO: consider case where user has not specified any pull requests in their config
     add_remote_branch(
         &local_remote,
         &local_branch,
