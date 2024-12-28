@@ -1,6 +1,6 @@
 use colored::Colorize;
 
-use crate::commands::help::make_description;
+use crate::commands::help::format_description;
 
 pub struct Flag<'a> {
     pub short: &'a str,
@@ -45,6 +45,6 @@ pub fn format_flag(flag: &Flag) -> String {
         flag.short.magenta(),
         ", ".black(),
         flag.long.magenta(),
-        make_description(flag.description)
+        format_description(flag.description)
     )
 }
