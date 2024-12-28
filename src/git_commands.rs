@@ -79,13 +79,13 @@ pub fn add_remote_branch(
         ]) {
             Ok(_) => Ok(()),
             Err(err) => {
-                GIT(&["branch", "-D", local_branch])?;
+                GIT(&["branch", "--delete", "--force", local_branch])?;
                 Err(anyhow::anyhow!("Could not fetch branch from remote: {err}"))
             }
         },
         Err(err) => {
             GIT(&["remote", "remove", local_remote])?;
-            Err(anyhow::anyhow!("Could not {err}"))
+            Err(anyhow::anyhow!("Could not fetch remote: {err}"))
         }
     }
 }
@@ -96,7 +96,7 @@ pub fn checkout_from_remote(branch: &str, remote: &str) -> anyhow::Result<String
     match GIT(&["checkout", branch]) {
         Ok(_) => Ok(current_branch),
         Err(err) => {
-            GIT(&["branch", "-D", branch])?;
+            GIT(&["branch", "--delete", "--force", branch])?;
             GIT(&["remote", "remove", remote])?;
             Err(anyhow::anyhow!(
                 "Could not checkout branch: {branch}, which belongs to remote {remote}\n{err}"
