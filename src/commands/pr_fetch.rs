@@ -45,6 +45,19 @@ pub async fn pr_fetch(
     while let Some(arg) = args.next() {
         if let Some(flag) = extract_value_from_flag(arg, &PR_FETCH_REPO_NAME_FLAG) {
             remote_name = Some(flag);
+            continue;
+        }
+        // Do not consider flags as arguments
+        if arg.starts_with("-") {
+            continue;
+        }
+
+        if !arg.chars().all(|ch| ch.is_numeric()) {
+            fail!(
+                "The following argument couldn't be parsed as a pull request number: {arg}
+  Examples of valid pull request numbers: 1154, 500, 1001"
+            );
+            continue;
         }
 
         let next_arg = args.peek();
@@ -107,13 +120,16 @@ pub async fn pr_fetch(
                 );
 
                 if i == 0 && checkout_flag {
-                    if git(&["checkout", &info.branch.local_name]).is_ok() {
+                    if let Err(cant_checkout) = git(&["checkout", &info.branch.local_name]) {
+                        fail!(
+                            "Could not check out branch {}:\n{cant_checkout}",
+                            info.branch.local_name
+                        )
+                    } else {
                         success!(
                             "Automatically checked out the first branch: {}",
                             info.branch.local_name
                         )
-                    } else {
-                        fail!("Could not check out branch {}", info.branch.local_name)
                     }
                 }
             }
