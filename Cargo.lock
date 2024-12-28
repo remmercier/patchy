@@ -685,6 +685,7 @@ dependencies = [
  "dialoguer",
  "futures",
  "indexmap",
+ "once_cell",
  "rand",
  "reqwest",
  "serde",

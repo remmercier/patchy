@@ -1,7 +1,7 @@
 use crate::fail;
 use crate::flags::{extract_value_from_flag, Flag};
 use crate::git_commands::{
-    fetch_pull_request, is_valid_branch_name, GITHUB_REMOTE_PREFIX, GITHUB_REMOTE_SUFFIX,
+    fetch_pull_request, is_valid_branch_name, GIT, GITHUB_REMOTE_PREFIX, GITHUB_REMOTE_SUFFIX,
 };
 use crate::success;
 use crate::types::CommandArgs;
@@ -31,7 +31,7 @@ pub static PR_FETCH_REPO_NAME_FLAG: Flag<'static> = Flag {
 
 pub async fn pr_fetch(
     args: &CommandArgs,
-    git: impl Fn(&[&str]) -> anyhow::Result<String>,
+    // git: impl Fn(&[&str]) -> anyhow::Result<String>,
 ) -> anyhow::Result<()> {
     let checkout_flag =
         args.contains(PR_FETCH_CHECKOUT_FLAG.short) || args.contains(PR_FETCH_CHECKOUT_FLAG.long);
@@ -75,7 +75,7 @@ pub async fn pr_fetch(
 
     // The user hasn't provided a custom remote, so we're going to try `origin`
     if remote_name.is_none() {
-        let remote = git(&["remote", "get-url", "origin"])?;
+        let remote = GIT(&["remote", "get-url", "origin"])?;
         if remote.starts_with(GITHUB_REMOTE_PREFIX) && remote.ends_with(GITHUB_REMOTE_SUFFIX) {
             let start = GITHUB_REMOTE_PREFIX.len();
             let end = remote.len() - GITHUB_REMOTE_SUFFIX.len();
@@ -120,12 +120,12 @@ pub async fn pr_fetch(
                 );
 
                 // Attempt to cleanup after ourselves
-                let _ = git(&["remote", "remove", &info.remote.local_name]);
+                let _ = GIT(&["remote", "remove", &info.remote.local_name]);
                 dbg!(&info);
 
                 // If user uses --checkout flag, we're going to checkout the first PR only
                 if i == 0 && checkout_flag {
-                    if let Err(cant_checkout) = git(&["checkout", &info.branch.local_name]) {
+                    if let Err(cant_checkout) = GIT(&["checkout", &info.branch.local_name]) {
                         fail!(
                             "Could not check out branch {}:\n{cant_checkout}",
                             info.branch.local_name

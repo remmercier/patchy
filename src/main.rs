@@ -1,26 +1,21 @@
 use colored::Colorize;
 use patchy::commands::{gen_patch, help, init, pr_fetch, run};
 use patchy::fail;
-use std::{env, path::Path};
+use std::env;
 
-use anyhow::Result;
-use patchy::git_commands::{get_git_output, get_git_root, spawn_git};
 use patchy::types::CommandArgs;
 use patchy::INDENT;
 
-async fn process_subcommand(
-    subcommand: &str,
-    args: CommandArgs,
-    root: &Path,
-    git: &impl Fn(&[&str]) -> anyhow::Result<String>,
-) -> Result<()> {
+use anyhow::Result;
+
+async fn process_subcommand(subcommand: &str, args: CommandArgs) -> Result<()> {
     match subcommand {
         // main commands
-        "init" => init(&args, root)?,
-        "run" => run(&args, root, &git).await?,
-        "gen-patch" => gen_patch(&args, root, git)?,
+        "init" => init(&args)?,
+        "run" => run(&args).await?,
+        "gen-patch" => gen_patch(&args)?,
         // lower level commands
-        "pr-fetch" => pr_fetch(&args, &git).await?,
+        "pr-fetch" => pr_fetch(&args).await?,
         unrecognized => {
             if !unrecognized.is_empty() {
                 anyhow::bail!(
@@ -51,11 +46,6 @@ async fn main() -> Result<()> {
     let _command_name = args.next();
     let subcommand = args.next().unwrap_or_default();
 
-    let root = get_git_root()?;
-
-    let git =
-        |args: &[&str]| -> anyhow::Result<String> { get_git_output(spawn_git(args, &root)?, args) };
-
     let mut args: CommandArgs = args.collect();
 
     if subcommand.starts_with("-") {
@@ -70,7 +60,7 @@ async fn main() -> Result<()> {
 
         Ok(())
     } else {
-        match process_subcommand(subcommand.as_str(), args, &root, &git).await {
+        match process_subcommand(subcommand.as_str(), args).await {
             Ok(()) => Ok(()),
             Err(msg) => {
                 fail!("{msg}");

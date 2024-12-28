@@ -1,4 +1,4 @@
-use std::{fs, path};
+use std::fs;
 
 use anyhow::Context;
 use colored::Colorize;
@@ -8,7 +8,8 @@ use crate::{
     backup::{backup_files, restore_backup},
     fail,
     git_commands::{
-        add_remote_branch, checkout_from_remote, fetch_pull_request, merge_pull_request,
+        add_remote_branch, checkout_from_remote, fetch_pull_request, merge_pull_request, GIT,
+        GIT_ROOT,
     },
     success,
     types::{CommandArgs, Configuration},
@@ -16,14 +17,10 @@ use crate::{
     APP_NAME, CONFIG_FILE, CONFIG_ROOT, INDENT,
 };
 
-pub async fn run(
-    _args: &CommandArgs,
-    root: &path::Path,
-    git: impl Fn(&[&str]) -> anyhow::Result<String>,
-) -> anyhow::Result<()> {
+pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
     println!();
 
-    let config_path = root.join(CONFIG_ROOT);
+    let config_path = GIT_ROOT.join(CONFIG_ROOT);
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
@@ -66,7 +63,7 @@ pub async fn run(
         // TODO: refactor this to not use such deep nesting
         match fetch_pull_request(&config.repo, pull_request, &client, None).await {
             Ok((response, info)) => {
-                match merge_pull_request(info, &git).await {
+                match merge_pull_request(info).await {
                     Ok(()) => {
                         success!(
                             "Merged pull request {}",
@@ -97,15 +94,15 @@ pub async fn run(
         }
     }
 
-    if let Err(err) = fs::create_dir(root.join(CONFIG_ROOT)) {
-        git(&["checkout", &previous_branch])?;
-        git(&["remote", "remove", &local_remote])?;
-        git(&["branch", "--delete", "--force", &local_branch])?;
+    if let Err(err) = fs::create_dir(GIT_ROOT.join(CONFIG_ROOT)) {
+        GIT(&["checkout", &previous_branch])?;
+        GIT(&["remote", "remove", &local_remote])?;
+        GIT(&["branch", "--delete", "--force", &local_branch])?;
         return Err(anyhow::anyhow!(err).context("Could not create directory {CONFIG_ROOT}"));
     };
 
     for (file_name, _file, contents) in backed_up_files.iter() {
-        restore_backup(file_name, contents, root).context("Could not restore backups")?;
+        restore_backup(file_name, contents).context("Could not restore backups")?;
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
@@ -115,18 +112,18 @@ pub async fn run(
                 .unwrap_or_default();
 
             if patches.contains(file_name) {
-                git(&[
+                GIT(&[
                     "am",
                     "--keep-cr",
                     "--signoff",
                     &format!(
                         "{}/{file_name}.patch",
-                        root.join(CONFIG_ROOT).to_str().unwrap_or_default()
+                        GIT_ROOT.join(CONFIG_ROOT).to_str().unwrap_or_default()
                     ),
                 ])
                 .context(format!("Could not apply patch {file_name}, skipping"))?;
 
-                let last_commit_message = git(&["log", "-1", "--format=%B"])?;
+                let last_commit_message = GIT(&["log", "-1", "--format=%B"])?;
                 success!(
                     "Applied patch {file_name} {}",
                     last_commit_message
@@ -140,8 +137,8 @@ pub async fn run(
         }
     }
 
-    git(&["add", CONFIG_ROOT])?;
-    git(&[
+    GIT(&["add", CONFIG_ROOT])?;
+    GIT(&[
         "commit",
         "--message",
         &format!("{APP_NAME}: Restore configuration files"),
@@ -149,10 +146,10 @@ pub async fn run(
 
     let temporary_branch = with_uuid("temp-branch");
 
-    git(&["switch", "--create", &temporary_branch])?;
+    GIT(&["switch", "--create", &temporary_branch])?;
 
-    git(&["remote", "remove", &local_remote])?;
-    git(&["branch", "--delete", "--force", &local_branch])?;
+    GIT(&["remote", "remove", &local_remote])?;
+    GIT(&["branch", "--delete", "--force", &local_branch])?;
 
     let confirmation = Confirm::new()
         .with_prompt(format!(
@@ -166,7 +163,7 @@ pub async fn run(
     if confirmation {
         // forcefully renames the branch we are currently on into the branch specified by the user.
         // WARNING: this is a destructive action which erases the original branch
-        git(&[
+        GIT(&[
             "branch",
             "--move",
             "--force",

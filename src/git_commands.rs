@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context};
+use once_cell::sync::Lazy;
 use reqwest::Client;
 
 use crate::{
@@ -21,6 +22,13 @@ pub fn is_valid_branch_name(branch_name: &str) -> bool {
 pub static GITHUB_REMOTE_PREFIX: &str = "git@github.com:";
 pub static GITHUB_REMOTE_SUFFIX: &str = ".git";
 
+pub fn spawn_git(args: &[&str], git_dir: &Path) -> Result<Output, std::io::Error> {
+    std::process::Command::new("git")
+        .args(args)
+        .current_dir(git_dir)
+        .output()
+}
+
 pub fn get_git_output(output: Output, args: &[&str]) -> anyhow::Result<String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout)
@@ -36,13 +44,6 @@ pub fn get_git_output(output: Output, args: &[&str]) -> anyhow::Result<String> {
     }
 }
 
-pub fn spawn_git(args: &[&str], git_dir: &Path) -> Result<Output, std::io::Error> {
-    std::process::Command::new("git")
-        .args(args)
-        .current_dir(git_dir)
-        .output()
-}
-
 pub fn get_git_root() -> anyhow::Result<PathBuf> {
     let current_dir = std::env::current_dir()?;
 
@@ -53,10 +54,16 @@ pub fn get_git_root() -> anyhow::Result<PathBuf> {
     get_git_output(root, &args).map(|output| output.into())
 }
 
-pub fn git(args: &[&str]) -> anyhow::Result<String> {
-    let root = get_git_root()?;
-    get_git_output(spawn_git(args, &root)?, args)
-}
+pub static GIT_ROOT: Lazy<PathBuf> =
+    Lazy::new(|| get_git_root().expect("Failed to determine Git root directory"));
+
+type Git = Lazy<Box<dyn Fn(&[&str]) -> anyhow::Result<String> + Send + Sync>>;
+
+pub static GIT: Git = Lazy::new(|| {
+    Box::new(move |args: &[&str]| -> anyhow::Result<String> {
+        get_git_output(spawn_git(args, &GIT_ROOT)?, args)
+    })
+});
 
 pub fn add_remote_branch(
     local_remote: &str,
@@ -64,33 +71,33 @@ pub fn add_remote_branch(
     remote_remote: &str,
     remote_branch: &str,
 ) -> anyhow::Result<()> {
-    match git(&["remote", "add", local_remote, remote_remote]) {
-        Ok(_) => match git(&[
+    match GIT(&["remote", "add", local_remote, remote_remote]) {
+        Ok(_) => match GIT(&[
             "fetch",
             remote_remote,
             &format!("{remote_branch}:{local_branch}"),
         ]) {
             Ok(_) => Ok(()),
             Err(err) => {
-                git(&["branch", "-D", local_branch])?;
+                GIT(&["branch", "-D", local_branch])?;
                 Err(anyhow::anyhow!("Could not fetch branch from remote: {err}"))
             }
         },
         Err(err) => {
-            git(&["remote", "remove", local_remote])?;
-            Err(anyhow::anyhow!("Could not add remote: {err}"))
+            GIT(&["remote", "remove", local_remote])?;
+            Err(anyhow::anyhow!("Could not {err}"))
         }
     }
 }
 
 pub fn checkout_from_remote(branch: &str, remote: &str) -> anyhow::Result<String> {
-    let current_branch = git(&["rev-parse", "--abbrev-ref", "HEAD"])?;
+    let current_branch = GIT(&["rev-parse", "--abbrev-ref", "HEAD"])?;
 
-    match git(&["checkout", branch]) {
+    match GIT(&["checkout", branch]) {
         Ok(_) => Ok(current_branch),
         Err(err) => {
-            git(&["branch", "-D", branch])?;
-            git(&["remote", "remove", remote])?;
+            GIT(&["branch", "-D", branch])?;
+            GIT(&["remote", "remove", remote])?;
             Err(anyhow::anyhow!(
                 "Could not checkout branch: {branch}, which belongs to remote {remote}\n{err}"
             ))
@@ -102,16 +109,16 @@ pub fn merge_into_main(
     local_branch: &str,
     remote_branch: &str,
 ) -> anyhow::Result<String, anyhow::Error> {
-    match git(&["merge", local_branch, "--no-commit", "--no-ff"]) {
+    match GIT(&["merge", local_branch, "--no-commit", "--no-ff"]) {
         Ok(_) => Ok(format!("Merged {remote_branch} successfully")),
         Err(_) => {
-            let files_with_conflicts = git(&["diff", "--name-only", "--diff-filter=U"])?;
+            let files_with_conflicts = GIT(&["diff", "--name-only", "--diff-filter=U"])?;
             for file_with_conflict in files_with_conflicts.lines() {
                 if file_with_conflict.ends_with(".md") {
-                    git(&["checkout", "--ours", file_with_conflict])?;
-                    git(&["add", file_with_conflict])?;
+                    GIT(&["checkout", "--ours", file_with_conflict])?;
+                    GIT(&["add", file_with_conflict])?;
                 } else {
-                    git(&["merge", "--abort"])?;
+                    GIT(&["merge", "--abort"])?;
                     return Err(anyhow::anyhow!(
                         "Unresolved conflict in {file_with_conflict}"
                     ));
@@ -122,18 +129,15 @@ pub fn merge_into_main(
     }
 }
 
-pub async fn merge_pull_request(
-    info: BranchAndRemote,
-    git: &impl Fn(&[&str]) -> anyhow::Result<String>,
-) -> anyhow::Result<()> {
+pub async fn merge_pull_request(info: BranchAndRemote) -> anyhow::Result<()> {
     merge_into_main(&info.branch.local_name, &info.branch.remote_name).context(
         "Could not merge branch into the current branch for pull request #{pull_request}, skipping",
     )?;
 
-    let has_unstaged_changes = git(&["diff", "--cached", "--quiet"]).is_err();
+    let has_unstaged_changes = GIT(&["diff", "--cached", "--quiet"]).is_err();
 
     if has_unstaged_changes {
-        git(&[
+        GIT(&[
             "commit",
             "--message",
             &format!(
@@ -143,8 +147,8 @@ pub async fn merge_pull_request(
         ])?;
     }
 
-    git(&["remote", "remove", &info.remote.local_name])?;
-    git(&["branch", "--delete", "--force", &info.branch.local_name])?;
+    GIT(&["remote", "remove", &info.remote.local_name])?;
+    GIT(&["branch", "--delete", "--force", &info.branch.local_name])?;
 
     Ok(())
 }

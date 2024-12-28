@@ -1,17 +1,18 @@
 use std::{
     fs::{self, File},
     io::Write,
-    path,
 };
 
 use colored::Colorize;
 
-use crate::{success, types::CommandArgs, CONFIG_FILE, CONFIG_ROOT, INDENT};
+use crate::{
+    git_commands::GIT_ROOT, success, types::CommandArgs, CONFIG_FILE, CONFIG_ROOT, INDENT,
+};
 
-pub fn init(_args: &CommandArgs, root: &path::Path) -> anyhow::Result<()> {
+pub fn init(_args: &CommandArgs) -> anyhow::Result<()> {
     let example_config = include_bytes!("../../example-config.toml");
 
-    let config_path = root.join(CONFIG_ROOT);
+    let config_path = GIT_ROOT.join(CONFIG_ROOT);
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
