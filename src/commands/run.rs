@@ -61,9 +61,9 @@ pub async fn run(
     let client = reqwest::Client::new();
 
     // TODO: make this concurrent, see https://users.rust-lang.org/t/processing-subprocesses-concurrently/79638/3
-    // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads
+    // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads, but we can run processes in the background
     for pull_request in config.pull_requests.iter() {
-        // TODO: refactor this to not use such horrible nesting
+        // TODO: refactor this to not use such deep nesting
         match fetch_pull_request(&config.repo, pull_request, &client, None).await {
             Ok((response, info)) => {
                 match merge_pull_request(info, &git).await {

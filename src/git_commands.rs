@@ -185,7 +185,7 @@ pub async fn fetch_pull_request(
         )));
 
     add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch).context(
-        format!("Could not add remove branch for pull request #{pull_request}, skipping."),
+        format!("Could not add remote branch for pull request #{pull_request}, skipping."),
     )?;
 
     let info = BranchAndRemote::new(&local_branch, remote_branch, &local_remote, remote_remote);
