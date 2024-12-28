@@ -1,21 +1,12 @@
-mod backup;
-mod commands;
-mod git_commands;
-mod types;
-mod utils;
-
 use colored::Colorize;
-use commands::{gen_patch, help, init, pr_fetch, run};
+use patchy::commands::{gen_patch, help, init, pr_fetch, run};
+use patchy::fail;
 use std::{env, path::Path};
 
 use anyhow::Result;
-use git_commands::{get_git_output, get_git_root, spawn_git};
-use types::CommandArgs;
-
-static CONFIG_ROOT: &str = ".patchy";
-static CONFIG_FILE: &str = "config.toml";
-static APP_NAME: &str = env!("CARGO_PKG_NAME");
-static INDENT: &str = "  ";
+use patchy::git_commands::{get_git_output, get_git_root, spawn_git};
+use patchy::types::CommandArgs;
+use patchy::INDENT;
 
 async fn process_subcommand(
     subcommand: &str,

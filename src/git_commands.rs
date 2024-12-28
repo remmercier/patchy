@@ -149,7 +149,8 @@ pub async fn fetch_pull_request(
     let url = format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo);
 
     let response = make_request(client, &url).await.context(format!(
-        "Couldn't fetch required data from remote, skipping. #{pull_request}. Url fetched: {url}"
+        "Couldn't fetch required data from remote for pull request #{pull_request}, skipping.
+Url fetched: {url}"
     ))?;
 
     let remote_remote = &response.head.repo.clone_url;
@@ -171,7 +172,7 @@ pub async fn fetch_pull_request(
         )));
 
     add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch).context(
-        format!("Could not add remove branch for pull request #{pull_request}, skipping"),
+        format!("Could not add remove branch for pull request #{pull_request}, skipping."),
     )?;
 
     let info = BranchAndRemote::new(&local_branch, remote_branch, &local_remote, remote_remote);
