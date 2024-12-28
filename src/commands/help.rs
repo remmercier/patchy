@@ -160,6 +160,16 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
                     "Fetch several pull requests and choose custom branch names for the pull requests #10000 and #9191"
                 )
             );
+
+            let example_4 = format!(
+                "{} {} {}
+    {}",
+                "--repo-name=helix-editor/helix".magenta(),
+                "11745 10000 9191 600".green(),
+                "--checkout".magenta(),
+                make_description("Fetch several pull requests, checkout the first one and use a custom github repo: https://github.com/helix-editor/helix")
+            );
+
             let branch_name_flag = flags(
                 &["-b=<name>", "--branch-name=<name>"],
                 "Choose local name for the branch belong to the preceding pull request",
@@ -168,8 +178,8 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
                 &["-c", "--checkout"],
                 "Automatically check out the branch belonging to the first pull request",
             );
-            let remote_name_flag = flags(
-                &["-r=<name>", "--remote-name=<name>"],
+            let repo_name_flag = flags(
+                &["-r=<name>", "--repo-name=<name>"],
                 "Choose a github repository, using the `origin` remote of the current repository by default",
             );
             let this_command_name = format!("{app_name} {}", cmd_name.yellow());
@@ -191,13 +201,15 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
 
     {this_command_name} {example_3}
 
+    {this_command_name} {example_4}
+
   Flags:
 
     {branch_name_flag}
 
     {checkout_flag}
 
-    {remote_name_flag}
+    {repo_name_flag}
 
     {help_flag}
 ",

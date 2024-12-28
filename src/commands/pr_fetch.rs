@@ -15,9 +15,9 @@ static PR_FETCH_BRANCH_NAME_FLAG: Flag<'static> = Flag {
     long: "--branch-name=",
 };
 
-static PR_FETCH_REMOTE_NAME_FLAG: Flag<'static> = Flag {
+static PR_FETCH_REPO_NAME_FLAG: Flag<'static> = Flag {
     short: "-r=",
-    long: "--remote-name=",
+    long: "--repo-name=",
 };
 
 static PR_FETCH_CHECKOUT_FLAG: Flag<'static> = Flag {
@@ -39,7 +39,7 @@ pub async fn pr_fetch(
     let mut remote_name: Option<String> = None;
 
     while let Some(arg) = args.next() {
-        if let Some(flag) = extract_value_from_flag(arg, &PR_FETCH_REMOTE_NAME_FLAG) {
+        if let Some(flag) = extract_value_from_flag(arg, &PR_FETCH_REPO_NAME_FLAG) {
             remote_name = Some(flag);
         }
 
