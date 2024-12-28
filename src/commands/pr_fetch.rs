@@ -8,7 +8,6 @@ use crate::types::CommandArgs;
 use crate::utils::display_link;
 use crate::INDENT;
 use anyhow::anyhow;
-use colored::control::SHOULD_COLORIZE;
 use colored::Colorize;
 
 static PR_FETCH_BRANCH_NAME_FLAG: Flag<'static> = Flag {
