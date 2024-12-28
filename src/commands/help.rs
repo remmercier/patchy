@@ -132,19 +132,7 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
             );
         }
         Some(cmd_name) if cmd_name == "pr-fetch" => {
-            let branch_name_flag = flags(
-                &["-b=<name>", "--branch-name=<name>"],
-                "Choose name for the branch fetched pull request",
-            );
-            let checkout_flag = flags(
-                &["-c", "--checkout"],
-                "Check out the first fetched pull request",
-            );
-            let remote_name_flag = flags(
-                &["-r=<name>", "--remote-name=<name>"],
-                "Choose a github repository, by default it uses the `origin` remote of the current repository",
-            );
-            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
+            let description = make_description("Fetch pull requests into a local branch");
 
             let example_1 = format!(
                 "{}
@@ -172,8 +160,19 @@ pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
                     "Fetch several pull requests and choose custom branch names for the pull requests #10000 and #9191"
                 )
             );
-
-            let description = make_description("Fetch pull requests into a local branch");
+            let branch_name_flag = flags(
+                &["-b=<name>", "--branch-name=<name>"],
+                "Choose local name for the branch belong to the preceding pull request",
+            );
+            let checkout_flag = flags(
+                &["-c", "--checkout"],
+                "Automatically check out the branch belonging to the first pull request",
+            );
+            let remote_name_flag = flags(
+                &["-r=<name>", "--remote-name=<name>"],
+                "Choose a github repository, using the `origin` remote of the current repository by default",
+            );
+            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
 
             println!(
                 "

@@ -8,8 +8,7 @@ pub struct Flag<'a> {
 /// # Examples
 ///
 /// ```rust
-/// use patchy::extract_value_from_flag;
-/// use patchy::commands::pr_fetch::Flag;
+/// use patchy::flags::{extract_value_from_flag, Flag};
 ///
 /// let my_flag = Flag {
 ///     short: "-r=",
