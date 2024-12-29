@@ -54,18 +54,21 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     let info = BranchAndRemote {
         branch: Branch {
-            remote_name: config.remote_branch.clone(),
-            local_name: with_uuid(&config.remote_branch),
+            upstream_branch_name: config.remote_branch.clone(),
+            local_branch_name: with_uuid(&config.remote_branch),
         },
         remote: Remote {
-            remote_name: format!("https://github.com/{}.git", config.repo),
-            local_name: with_uuid(&config.repo),
+            repository_url: format!("https://github.com/{}.git", config.repo),
+            local_remote_alias: with_uuid(&config.repo),
         },
     };
 
     add_remote_branch(&info)?;
 
-    let previous_branch = checkout_from_remote(&info.branch.local_name, &info.remote.local_name)?;
+    let previous_branch = checkout_from_remote(
+        &info.branch.local_branch_name,
+        &info.remote.local_remote_alias,
+    )?;
 
     let client = reqwest::Client::new();
 
@@ -112,8 +115,13 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     if let Err(err) = fs::create_dir(GIT_ROOT.join(CONFIG_ROOT)) {
         GIT(&["checkout", &previous_branch])?;
-        GIT(&["remote", "remove", &info.remote.local_name])?;
-        GIT(&["branch", "--delete", "--force", &info.branch.local_name])?;
+        GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
+        GIT(&[
+            "branch",
+            "--delete",
+            "--force",
+            &info.branch.local_branch_name,
+        ])?;
         return Err(anyhow::anyhow!(err).context("Could not create directory {CONFIG_ROOT}"));
     };
 
@@ -164,8 +172,13 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     GIT(&["switch", "--create", &temporary_branch])?;
 
-    GIT(&["remote", "remove", &info.remote.local_name])?;
-    GIT(&["branch", "--delete", "--force", &info.branch.local_name])?;
+    GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
+    GIT(&[
+        "branch",
+        "--delete",
+        "--force",
+        &info.branch.local_branch_name,
+    ])?;
 
     let confirmation = Confirm::new()
         .with_prompt(format!(

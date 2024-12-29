@@ -66,17 +66,17 @@ pub static GIT: Git = Lazy::new(|| {
 });
 
 pub fn add_remote_branch(info: &BranchAndRemote) -> anyhow::Result<()> {
-    match GIT(&["remote", "add", &info.remote.local_name, &info.remote.remote_name]) {
+    match GIT(&["remote", "add", &info.remote.local_remote_alias, &info.remote.repository_url]) {
         Ok(_) => match GIT(&[
             "fetch",
-            &info.remote.remote_name,
-            &format!("{}:{}", info.branch.remote_name, info.branch.local_name),
+            &info.remote.repository_url,
+            &format!("{}:{}", info.branch.upstream_branch_name, info.branch.local_branch_name),
         ]) {
             Ok(_) => Ok(()),
-            Err(err) => Err(anyhow::anyhow!("We couldn't find branch {} of GitHub repository {}. Are you sure it exists?\n{err}", info.branch.remote_name, info.remote.remote_name)),
+            Err(err) => Err(anyhow::anyhow!("We couldn't find branch {} of GitHub repository {}. Are you sure it exists?\n{err}", info.branch.upstream_branch_name, info.remote.repository_url)),
         },
         Err(err) => {
-            GIT(&["remote", "remove", &info.remote.local_name])?;
+            GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
             Err(anyhow::anyhow!("Could not fetch remote: {err}"))
         }
     }
@@ -122,7 +122,11 @@ pub fn merge_into_main(
 }
 
 pub async fn merge_pull_request(info: BranchAndRemote) -> anyhow::Result<()> {
-    merge_into_main(&info.branch.local_name, &info.branch.remote_name).context(
+    merge_into_main(
+        &info.branch.local_branch_name,
+        &info.branch.upstream_branch_name,
+    )
+    .context(
         "Could not merge branch into the current branch for pull request #{pull_request}, skipping",
     )?;
 
@@ -134,13 +138,18 @@ pub async fn merge_pull_request(info: BranchAndRemote) -> anyhow::Result<()> {
             "--message",
             &format!(
                 "{APP_NAME}: Merge branch {} of {}",
-                &info.branch.remote_name, &info.remote.remote_name
+                &info.branch.upstream_branch_name, &info.remote.repository_url
             ),
         ])?;
     }
 
-    GIT(&["remote", "remove", &info.remote.local_name])?;
-    GIT(&["branch", "--delete", "--force", &info.branch.local_name])?;
+    GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
+    GIT(&[
+        "branch",
+        "--delete",
+        "--force",
+        &info.branch.local_branch_name,
+    ])?;
 
     Ok(())
 }
@@ -164,8 +173,8 @@ pub async fn fetch_pull_request(
 
     let info = BranchAndRemote {
         branch: Branch {
-            remote_name: response.head.r#ref.clone(),
-            local_name: custom_branch_name
+            upstream_branch_name: response.head.r#ref.clone(),
+            local_branch_name: custom_branch_name
                 .map(|s| s.into())
                 .unwrap_or(with_uuid(&format!(
                     "{title}-{}",
@@ -174,8 +183,8 @@ pub async fn fetch_pull_request(
                 ))),
         },
         remote: Remote {
-            remote_name: response.head.repo.clone_url.clone(),
-            local_name: with_uuid(&format!(
+            repository_url: response.head.repo.clone_url.clone(),
+            local_remote_alias: with_uuid(&format!(
                 "{title}-{}",
                 pull_request,
                 title = normalize_commit_msg(&response.html_url)

@@ -35,14 +35,14 @@ pub struct Repo {
 
 #[derive(Debug)]
 pub struct Branch {
-    pub local_name: String,
-    pub remote_name: String,
+    pub local_branch_name: String,
+    pub upstream_branch_name: String,
 }
 
 #[derive(Debug)]
 pub struct Remote {
-    pub local_name: String,
-    pub remote_name: String,
+    pub local_remote_alias: String,
+    pub repository_url: String,
 }
 
 #[derive(Debug)]
@@ -59,12 +59,12 @@ impl BranchAndRemote {
         remote_remote: &str,
     ) -> Self {
         let branch = Branch {
-            local_name: local_branch.into(),
-            remote_name: remote_branch.into(),
+            local_branch_name: local_branch.into(),
+            upstream_branch_name: remote_branch.into(),
         };
         let remote = Remote {
-            local_name: local_remote.into(),
-            remote_name: remote_remote.into(),
+            local_remote_alias: local_remote.into(),
+            repository_url: remote_remote.into(),
         };
         Self { branch, remote }
     }
