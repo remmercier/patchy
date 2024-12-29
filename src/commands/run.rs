@@ -34,11 +34,11 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     if config.repo.is_empty() {
         return Err(anyhow::anyhow!(
-            r#"You haven't specified a remote `repo`, which can be for example:
+            r#"You haven't specified a `repo` in your config, which can be for example:
   - "helix-editor/helix"
-  - "microsoft/vscode
+  - "microsoft/vscode"
 
-  For mose information see this guide: https://github.com/NikitaRevenco/patchy/blob/main/README.md""#
+  For more information see this guide: https://github.com/NikitaRevenco/patchy/blob/main/README.md""#
         ));
     }
 

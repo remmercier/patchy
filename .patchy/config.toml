@@ -6,7 +6,7 @@
 # repo = "helix-editor/helix"
 # repo = "microsoft/vscode"
 
-repo = ""
+repo = "helix-editor/helix"
 
 # The main repository's branch
 # 
