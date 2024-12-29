@@ -1,6 +1,8 @@
 use colored::Colorize;
+use patchy::commands::help::{HELP_FLAG, VERSION_FLAG};
 use patchy::commands::{gen_patch, help, init, pr_fetch, run};
 use patchy::fail;
+use patchy::flags::contains_flag;
 use std::env;
 
 use patchy::types::CommandArgs;
@@ -53,9 +55,9 @@ async fn main() -> Result<()> {
         args.insert(subcommand.clone());
     }
 
-    if args.contains("-h") || args.contains("--help") {
+    if contains_flag(&args, &HELP_FLAG) {
         help(&args, Some(&subcommand))
-    } else if args.contains("-v") || args.contains("--version") {
+    } else if contains_flag(&args, &VERSION_FLAG) {
         print!("{}", env!("CARGO_PKG_VERSION"));
 
         Ok(())

@@ -76,3 +76,10 @@ macro_rules! fail {
         eprintln!("{INDENT}{}{}", "✗ ".bright_red().bold(), format!($($arg)*))
     }};
 }
+
+#[macro_export]
+macro_rules! info {
+    ($($arg:tt)*) => {{
+        eprintln!("{INDENT}{}{}", "ⓘ ".bright_blue().bold(), format!($($arg)*))
+    }};
+}

@@ -19,13 +19,13 @@ pub fn format_description(description: &str) -> String {
     format!("{} {description}", "»".black())
 }
 
-static HELP_FLAG: Flag<'static> = Flag {
+pub static HELP_FLAG: Flag<'static> = Flag {
     short: "-h",
     long: "--help",
     description: "Print this message",
 };
 
-static VERSION_FLAG: Flag<'static> = Flag {
+pub static VERSION_FLAG: Flag<'static> = Flag {
     short: "-v",
     long: "--version",
     description: "Get patchy version",

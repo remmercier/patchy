@@ -11,7 +11,7 @@ use crate::{
         add_remote_branch, checkout_from_remote, fetch_pull_request, merge_pull_request, GIT,
         GIT_ROOT,
     },
-    success,
+    info, success,
     types::{CommandArgs, Configuration},
     utils::{display_link, with_uuid},
     APP_NAME, CONFIG_FILE, CONFIG_ROOT, INDENT,
@@ -58,39 +58,43 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     let client = reqwest::Client::new();
 
-    // TODO: make this concurrent, see https://users.rust-lang.org/t/processing-subprocesses-concurrently/79638/3
-    // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads, but we can run processes in the background
-    for pull_request in config.pull_requests.iter() {
-        // TODO: refactor this to not use such deep nesting
-        match fetch_pull_request(&config.repo, pull_request, &client, None).await {
-            Ok((response, info)) => {
-                match merge_pull_request(info).await {
-                    Ok(()) => {
-                        success!(
-                            "Merged pull request {}",
-                            display_link(
-                                &format!(
-                                    "{}{} {}",
-                                    "#".bright_blue(),
-                                    pull_request.bright_blue(),
-                                    &response.title.blue().italic()
+    if config.pull_requests.is_empty() {
+        info!("You haven't specified any pull requests to fetch in your config.")
+    } else {
+        // TODO: make this concurrent, see https://users.rust-lang.org/t/processing-subprocesses-concurrently/79638/3
+        // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads, but we can run processes in the background
+        for pull_request in config.pull_requests.iter() {
+            // TODO: refactor this to not use such deep nesting
+            match fetch_pull_request(&config.repo, pull_request, &client, None).await {
+                Ok((response, info)) => {
+                    match merge_pull_request(info).await {
+                        Ok(()) => {
+                            success!(
+                                "Merged pull request {}",
+                                display_link(
+                                    &format!(
+                                        "{}{} {}",
+                                        "#".bright_blue(),
+                                        pull_request.bright_blue(),
+                                        &response.title.blue().italic()
+                                    ),
+                                    &response.html_url
                                 ),
-                                &response.html_url
-                            ),
-                        )
-                    }
-                    Err(err) => {
-                        fail!(
-                            "Could not merge pull request {pr}\n\n{err:#?}",
-                            pr = pull_request.bright_blue()
-                        );
-                        continue;
-                    }
-                };
-            }
-            Err(err) => {
-                fail!("Could not fetch branch from remote\n\n{err:#?}");
-                continue;
+                            )
+                        }
+                        Err(err) => {
+                            fail!(
+                                "Could not merge pull request {pr}\n\n{err:#?}",
+                                pr = pull_request.bright_blue()
+                            );
+                            continue;
+                        }
+                    };
+                }
+                Err(err) => {
+                    fail!("Could not fetch branch from remote\n\n{err:#?}");
+                    continue;
+                }
             }
         }
     }

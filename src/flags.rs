@@ -1,4 +1,5 @@
 use colored::Colorize;
+use indexmap::IndexSet;
 
 use crate::commands::help::format_description;
 
@@ -36,6 +37,10 @@ pub fn extract_value_from_flag(arg: &str, flag: &Flag) -> Option<String> {
     } else {
         None
     }
+}
+
+pub fn contains_flag(set: &IndexSet<String>, flag: &Flag) -> bool {
+    set.contains(flag.short) || set.contains(flag.long)
 }
 
 /// Formats a flag into a colored format with a description, printable to the terminal

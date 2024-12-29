@@ -64,7 +64,7 @@ pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
         // 2. otherwise use the commit message
         // 3. if all fails use the commit hash
         let patch_filename = maybe_custom_patch_name.unwrap_or({
-            GIT(&["log", "--format=%B", "-n", "1", patch_commit_hash])
+            GIT(&["log", "--format=%B", "--max-count=1", patch_commit_hash])
                 .map(|commit_msg| normalize_commit_msg(&commit_msg))
                 .unwrap_or(patch_commit_hash.to_string())
         });
