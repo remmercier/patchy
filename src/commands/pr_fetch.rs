@@ -11,6 +11,8 @@ use crate::INDENT;
 use anyhow::anyhow;
 use colored::Colorize;
 
+use super::help::{HELP_FLAG, VERSION_FLAG};
+
 pub static PR_FETCH_BRANCH_NAME_FLAG: Flag<'static> = Flag {
     short: "-b=",
     long: "--branch-name=",
@@ -30,10 +32,12 @@ pub static PR_FETCH_REPO_NAME_FLAG: Flag<'static> = Flag {
         "Choose a github repository, using the `origin` remote of the current repository by default",
 };
 
-pub static PR_FETCH_FLAGS: &[&Flag<'static>; 3] = &[
+pub static PR_FETCH_FLAGS: &[&Flag<'static>; 5] = &[
     &PR_FETCH_BRANCH_NAME_FLAG,
     &PR_FETCH_CHECKOUT_FLAG,
     &PR_FETCH_REPO_NAME_FLAG,
+    &HELP_FLAG,
+    &VERSION_FLAG,
 ];
 
 pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
@@ -46,13 +50,21 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
 
     let mut remote_name: Option<String> = None;
 
+    let mut no_more_flags = false;
+
     while let Some(arg) = args.next() {
+        // After "--", each argument is interpreted literally. This way, we can e.g. use filenames that are named exactly the same as flags
+        if arg == "--" {
+            no_more_flags = true;
+            continue;
+        };
+
         if let Some(flag) = extract_value_from_flag(arg, &PR_FETCH_REPO_NAME_FLAG) {
             remote_name = Some(flag);
             continue;
         }
 
-        if arg.starts_with('-') {
+        if arg.starts_with('-') && !no_more_flags {
             if !is_valid_flag(arg, PR_FETCH_FLAGS) {
                 fail!("Invalid flag: {arg}");
                 let _ = help(Some("pr-fetch"));

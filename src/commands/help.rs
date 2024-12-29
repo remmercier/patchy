@@ -6,7 +6,6 @@ use crate::{
         pr_fetch::{PR_FETCH_BRANCH_NAME_FLAG, PR_FETCH_CHECKOUT_FLAG, PR_FETCH_REPO_NAME_FLAG},
     },
     flags::{format_flag, Flag},
-    types::CommandArgs,
     APP_NAME,
 };
 

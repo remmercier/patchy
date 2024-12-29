@@ -4,8 +4,9 @@ use std::{
 };
 
 use crate::{
+    commands::help,
     fail,
-    flags::{extract_value_from_flag, Flag},
+    flags::{extract_value_from_flag, is_valid_flag, Flag},
     git_commands::{is_valid_branch_name, GIT, GIT_ROOT},
     success,
     types::CommandArgs,
@@ -14,11 +15,16 @@ use crate::{
 use crate::{CONFIG_ROOT, INDENT};
 use colored::Colorize;
 
+use super::help::{HELP_FLAG, VERSION_FLAG};
+
 pub static GEN_PATCH_NAME_FLAG: Flag<'static> = Flag {
     short: "-n=",
     long: "--patch-filename=",
     description: "Choose filename for the patch",
 };
+
+pub static GEN_PATCH_FLAGS: &[&Flag<'static>; 3] =
+    &[&GEN_PATCH_NAME_FLAG, &HELP_FLAG, &VERSION_FLAG];
 
 pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
     let mut args = args.iter().peekable();
@@ -26,7 +32,28 @@ pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
 
     let config_path = GIT_ROOT.join(CONFIG_ROOT);
 
+    let mut no_more_flags = false;
+
+    // TODO: refactor arg iterating logic into a separate function
+    // This is duplicated in pr_fetch
     while let Some(arg) = args.next() {
+        // After "--", each argument is interpreted literally. This way, we can e.g. use filenames that are named exactly the same as flags
+        if arg == "--" {
+            no_more_flags = true;
+            continue;
+        };
+
+        if arg.starts_with('-') && !no_more_flags {
+            if !is_valid_flag(arg, GEN_PATCH_FLAGS) {
+                fail!("Invalid flag: {arg}");
+                let _ = help(Some("gen-patch"));
+                std::process::exit(1);
+            }
+
+            // Do not consider flags as arguments
+            continue;
+        }
+
         let next_arg = args.peek();
         let maybe_custom_patch_filename: Option<String> = next_arg.and_then(|next_arg| {
             extract_value_from_flag(next_arg, &GEN_PATCH_NAME_FLAG)
