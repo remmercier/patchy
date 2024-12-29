@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 pub type CommandArgs = IndexSet<String>;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub struct Configuration {
     pub local_branch: String,

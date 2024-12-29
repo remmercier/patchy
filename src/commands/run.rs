@@ -32,6 +32,18 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
         "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
+    if config.repo.is_empty() {
+        return Err(anyhow::anyhow!(
+            r#"You haven't specified a remote `repo`, which can be for example:
+  - "helix-editor/helix"
+  - "microsoft/vscode
+
+  For mose information see this guide: https://github.com/NikitaRevenco/patchy/blob/main/README.md""#
+        ));
+    }
+
+    dbg!(&config);
+
     let config_files = fs::read_dir(&config_path).context(format!(
         "Could not read files in directory {:?}",
         &config_path
