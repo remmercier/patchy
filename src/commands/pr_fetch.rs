@@ -1,5 +1,6 @@
+use crate::commands::help;
 use crate::fail;
-use crate::flags::{extract_value_from_flag, Flag};
+use crate::flags::{extract_value_from_flag, is_valid_flag, Flag};
 use crate::git_commands::{
     fetch_pull_request, is_valid_branch_name, GIT, GITHUB_REMOTE_PREFIX, GITHUB_REMOTE_SUFFIX,
 };
@@ -29,10 +30,13 @@ pub static PR_FETCH_REPO_NAME_FLAG: Flag<'static> = Flag {
         "Choose a github repository, using the `origin` remote of the current repository by default",
 };
 
-pub async fn pr_fetch(
-    args: &CommandArgs,
-    // git: impl Fn(&[&str]) -> anyhow::Result<String>,
-) -> anyhow::Result<()> {
+pub static PR_FETCH_FLAGS: &[&Flag<'static>; 3] = &[
+    &PR_FETCH_BRANCH_NAME_FLAG,
+    &PR_FETCH_CHECKOUT_FLAG,
+    &PR_FETCH_REPO_NAME_FLAG,
+];
+
+pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
     let checkout_flag =
         args.contains(PR_FETCH_CHECKOUT_FLAG.short) || args.contains(PR_FETCH_CHECKOUT_FLAG.long);
 
@@ -47,8 +51,15 @@ pub async fn pr_fetch(
             remote_name = Some(flag);
             continue;
         }
-        // Do not consider flags as arguments
-        if arg.starts_with("-") {
+
+        if arg.starts_with('-') {
+            if !is_valid_flag(arg, PR_FETCH_FLAGS) {
+                fail!("Invalid flag: {arg}");
+                let _ = help(Some("pr-fetch"));
+                std::process::exit(1);
+            }
+
+            // Do not consider flags as arguments
             continue;
         }
 

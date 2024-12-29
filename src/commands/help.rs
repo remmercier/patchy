@@ -31,7 +31,7 @@ pub static VERSION_FLAG: Flag<'static> = Flag {
     description: "Get patchy version",
 };
 
-pub fn help(_args: &CommandArgs, command: Option<&str>) -> anyhow::Result<()> {
+pub fn help(command: Option<&str>) -> anyhow::Result<()> {
     let author = "Nikita Revenco ".italic();
     let less_than = "<".black().italic();
     let email = "pm@nikitarevenco.com".italic();

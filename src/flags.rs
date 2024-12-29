@@ -39,8 +39,15 @@ pub fn extract_value_from_flag(arg: &str, flag: &Flag) -> Option<String> {
     }
 }
 
-pub fn contains_flag(set: &IndexSet<String>, flag: &Flag) -> bool {
-    set.contains(flag.short) || set.contains(flag.long)
+pub fn contains_flag(args: &IndexSet<String>, flag: &Flag) -> bool {
+    args.contains(flag.short) || args.contains(flag.long)
+}
+
+pub fn is_valid_flag(arg: &str, available_flags: &[&Flag]) -> bool {
+    available_flags
+        .iter()
+        .flat_map(|flag| [flag.short, flag.long])
+        .any(|flag| arg.starts_with(flag))
 }
 
 /// Formats a flag into a colored format with a description, printable to the terminal

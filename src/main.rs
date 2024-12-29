@@ -20,7 +20,7 @@ async fn process_subcommand(subcommand: &str, args: CommandArgs) -> Result<()> {
         "pr-fetch" => pr_fetch(&args).await?,
         unrecognized => {
             if !unrecognized.is_empty() {
-                anyhow::bail!(
+                fail!(
                     "{}",
                     format!(
                         "  Unknown {unknown}: {}",
@@ -35,7 +35,7 @@ async fn process_subcommand(subcommand: &str, args: CommandArgs) -> Result<()> {
                 )
             }
 
-            help(&args, None)?;
+            help(None)?;
         }
     }
 
@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
     }
 
     if contains_flag(&args, &HELP_FLAG) {
-        help(&args, Some(&subcommand))
+        help(Some(&subcommand))
     } else if contains_flag(&args, &VERSION_FLAG) {
         print!("{}", env!("CARGO_PKG_VERSION"));
 
