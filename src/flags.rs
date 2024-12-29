@@ -31,9 +31,9 @@ pub struct Flag<'a> {
 /// ```
 pub fn extract_value_from_flag(arg: &str, flag: &Flag) -> Option<String> {
     if arg.starts_with(flag.short) {
-        arg.get(flag.short.len()..).map(|a| a.into())
+        arg.get(flag.short.len()..).map(|value| value.into())
     } else if arg.starts_with(flag.long) {
-        arg.get(flag.long.len()..).map(|a| a.into())
+        arg.get(flag.long.len()..).map(|value| value.into())
     } else {
         None
     }
@@ -43,7 +43,9 @@ pub fn contains_flag(args: &IndexSet<String>, flag: &Flag) -> bool {
     args.contains(flag.short) || args.contains(flag.long)
 }
 
+/// Checks whether an input argument is a valid flag
 pub fn is_valid_flag(arg: &str, available_flags: &[&Flag]) -> bool {
+    // TODO: flags that don't end in "=" should be compared fully, not just the beginning
     available_flags
         .iter()
         .flat_map(|flag| [flag.short, flag.long])
