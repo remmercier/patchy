@@ -78,10 +78,7 @@ pub fn add_remote_branch(
             &format!("{remote_branch}:{local_branch}"),
         ]) {
             Ok(_) => Ok(()),
-            Err(err) => {
-                GIT(&["branch", "--delete", "--force", local_branch])?;
-                Err(anyhow::anyhow!("Could not fetch branch from remote: {err}"))
-            }
+            Err(err) => Err(anyhow::anyhow!("Could not fetch branch from remote: {err}")),
         },
         Err(err) => {
             GIT(&["remote", "remove", local_remote])?;
