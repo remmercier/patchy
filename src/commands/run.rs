@@ -58,6 +58,8 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     let local_branch = with_uuid(&config.remote_branch);
 
+    dbg!("1");
+
     // TODO: consider case where user has not specified any pull requests in their config
     add_remote_branch(
         &local_remote,
@@ -65,6 +67,7 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
         &remote_remote,
         &config.remote_branch,
     )?;
+    dbg!("2");
 
     let previous_branch = checkout_from_remote(&local_branch, &local_remote)?;
 
