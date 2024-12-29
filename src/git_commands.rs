@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 
 use crate::{
-    types::{BranchAndRemote, GitHubResponse},
+    types::{Branch, BranchAndRemote, GitHubResponse, Remote},
     utils::{make_request, normalize_commit_msg, with_uuid},
     APP_NAME,
 };
@@ -65,23 +65,18 @@ pub static GIT: Git = Lazy::new(|| {
     })
 });
 
-pub fn add_remote_branch(
-    local_remote: &str,
-    local_branch: &str,
-    remote_remote: &str,
-    remote_branch: &str,
-) -> anyhow::Result<()> {
-    match GIT(&["remote", "add", local_remote, remote_remote]) {
+pub fn add_remote_branch(info: &BranchAndRemote) -> anyhow::Result<()> {
+    match GIT(&["remote", "add", &info.remote.local_name, &info.remote.remote_name]) {
         Ok(_) => match GIT(&[
             "fetch",
-            remote_remote,
-            &format!("{remote_branch}:{local_branch}"),
+            &info.remote.remote_name,
+            &format!("{}:{}", info.branch.remote_name, info.branch.local_name),
         ]) {
             Ok(_) => Ok(()),
-            Err(err) => Err(anyhow::anyhow!("We couldn't find branch {remote_branch} of GitHub repository {remote_remote}. Are you sure it exists?\n{err}")),
+            Err(err) => Err(anyhow::anyhow!("We couldn't find branch {} of GitHub repository {}. Are you sure it exists?\n{err}", info.branch.remote_name, info.remote.remote_name)),
         },
         Err(err) => {
-            GIT(&["remote", "remove", local_remote])?;
+            GIT(&["remote", "remove", &info.remote.local_name])?;
             Err(anyhow::anyhow!("Could not fetch remote: {err}"))
         }
     }
@@ -167,29 +162,30 @@ pub async fn fetch_pull_request(
         }
     };
 
-    let remote_remote = &response.head.repo.clone_url;
+    let info = BranchAndRemote {
+        branch: Branch {
+            remote_name: response.head.r#ref.clone(),
+            local_name: custom_branch_name
+                .map(|s| s.into())
+                .unwrap_or(with_uuid(&format!(
+                    "{title}-{}",
+                    pull_request,
+                    title = normalize_commit_msg(&response.title)
+                ))),
+        },
+        remote: Remote {
+            remote_name: response.head.repo.clone_url.clone(),
+            local_name: with_uuid(&format!(
+                "{title}-{}",
+                pull_request,
+                title = normalize_commit_msg(&response.html_url)
+            )),
+        },
+    };
 
-    let local_remote = with_uuid(&format!(
-        "{title}-{}",
-        pull_request,
-        title = normalize_commit_msg(&response.html_url)
-    ));
-
-    let remote_branch = &response.head.r#ref;
-
-    let local_branch = custom_branch_name
-        .map(|s| s.into())
-        .unwrap_or(with_uuid(&format!(
-            "{title}-{}",
-            pull_request,
-            title = normalize_commit_msg(&response.title)
-        )));
-
-    add_remote_branch(&local_remote, &local_branch, remote_remote, remote_branch).context(
-        format!("Could not add remote branch for pull request #{pull_request}, skipping."),
-    )?;
-
-    let info = BranchAndRemote::new(&local_branch, remote_branch, &local_remote, remote_remote);
+    add_remote_branch(&info).context(format!(
+        "Could not add remote branch for pull request #{pull_request}, skipping."
+    ))?;
 
     Ok((response, info))
 }

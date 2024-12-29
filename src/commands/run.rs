@@ -12,7 +12,7 @@ use crate::{
         GIT_ROOT,
     },
     info, success,
-    types::{CommandArgs, Configuration},
+    types::{Branch, BranchAndRemote, CommandArgs, Configuration, Remote},
     utils::{display_link, with_uuid},
     APP_NAME, CONFIG_FILE, CONFIG_ROOT, INDENT,
 };
@@ -52,24 +52,20 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
     let backed_up_files = backup_files(config_files)
         .context(format!("Could not {} configuration files", crate::APP_NAME))?;
 
-    let local_remote = with_uuid(&config.repo);
+    let info = BranchAndRemote {
+        branch: Branch {
+            remote_name: config.remote_branch.clone(),
+            local_name: with_uuid(&config.remote_branch),
+        },
+        remote: Remote {
+            remote_name: format!("https://github.com/{}.git", config.repo),
+            local_name: with_uuid(&config.repo),
+        },
+    };
 
-    let remote_remote = format!("https://github.com/{}.git", config.repo);
+    add_remote_branch(&info)?;
 
-    let local_branch = with_uuid(&config.remote_branch);
-
-    dbg!("1");
-
-    // TODO: consider case where user has not specified any pull requests in their config
-    add_remote_branch(
-        &local_remote,
-        &local_branch,
-        &remote_remote,
-        &config.remote_branch,
-    )?;
-    dbg!("2");
-
-    let previous_branch = checkout_from_remote(&local_branch, &local_remote)?;
+    let previous_branch = checkout_from_remote(&info.branch.local_name, &info.remote.local_name)?;
 
     let client = reqwest::Client::new();
 
@@ -116,8 +112,8 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     if let Err(err) = fs::create_dir(GIT_ROOT.join(CONFIG_ROOT)) {
         GIT(&["checkout", &previous_branch])?;
-        GIT(&["remote", "remove", &local_remote])?;
-        GIT(&["branch", "--delete", "--force", &local_branch])?;
+        GIT(&["remote", "remove", &info.remote.local_name])?;
+        GIT(&["branch", "--delete", "--force", &info.branch.local_name])?;
         return Err(anyhow::anyhow!(err).context("Could not create directory {CONFIG_ROOT}"));
     };
 
@@ -168,8 +164,8 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     GIT(&["switch", "--create", &temporary_branch])?;
 
-    GIT(&["remote", "remove", &local_remote])?;
-    GIT(&["branch", "--delete", "--force", &local_branch])?;
+    GIT(&["remote", "remove", &info.remote.local_name])?;
+    GIT(&["branch", "--delete", "--force", &info.branch.local_name])?;
 
     let confirmation = Confirm::new()
         .with_prompt(format!(
