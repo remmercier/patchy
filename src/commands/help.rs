@@ -193,7 +193,7 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
                 format_description("Fetch several pull requests, checkout the first one and use a custom github repo: https://github.com/helix-editor/helix")
             );
 
-            let example_2 = format!(
+            let example_5 = format!(
                 "{}
     {}",
                 "11745 10000@be8f264327f6ae729a0b372ef01f6fde49a78310 9191 600@5d10fa5beb917a0dbe0ef8441d14b3d0dd15227b".green(),
@@ -223,6 +223,8 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
     {this_command_name} {example_3}
 
     {this_command_name} {example_4}
+
+    {this_command_name} {example_5}
 
   Flags:
 
