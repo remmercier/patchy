@@ -193,6 +193,13 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
                 format_description("Fetch several pull requests, checkout the first one and use a custom github repo: https://github.com/helix-editor/helix")
             );
 
+            let example_2 = format!(
+                "{}
+    {}",
+                "11745 10000@be8f264327f6ae729a0b372ef01f6fde49a78310 9191 600@5d10fa5beb917a0dbe0ef8441d14b3d0dd15227b".green(),
+                format_description("Fetch several pull requests at a certain commit")
+            );
+
             let branch_name_flag = format_flag(&PR_FETCH_BRANCH_NAME_FLAG);
             let checkout_flag = format_flag(&PR_FETCH_CHECKOUT_FLAG);
             let repo_name_flag = format_flag(&PR_FETCH_REPO_NAME_FLAG);

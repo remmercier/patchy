@@ -12,6 +12,7 @@ use anyhow::anyhow;
 use colored::Colorize;
 
 use super::help::{HELP_FLAG, VERSION_FLAG};
+use super::run::parse_if_maybe_hash;
 
 pub static PR_FETCH_BRANCH_NAME_FLAG: Flag<'static> = Flag {
     short: "-b=",
@@ -77,10 +78,12 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
             continue;
         }
 
-        if !arg.chars().all(|ch| ch.is_numeric()) {
+        let (pull_request, hash) = parse_if_maybe_hash(arg, "@");
+
+        if !pull_request.chars().all(|ch| ch.is_numeric()) {
             fail!(
                 "The following argument couldn't be parsed as a pull request number: {arg}
-  Examples of valid pull request numbers: 1154, 500, 1001"
+  Examples of valid pull request numbers (with custom commit hashes supported): 1154, 500, '1001@0b36296f67a80309243ea5c8892c79798c6dcf93'"
             );
             continue;
         }
@@ -95,7 +98,7 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
             args.next();
         };
 
-        pull_requests_with_maybe_custom_branch_names.push((arg, maybe_custom_branch_name));
+        pull_requests_with_maybe_custom_branch_names.push((arg, maybe_custom_branch_name, hash));
     }
 
     // The user hasn't provided a custom remote, so we're going to try `origin`
@@ -116,7 +119,7 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
 
     let client = reqwest::Client::new();
 
-    for (i, (pull_request, maybe_custom_branch_name)) in
+    for (i, (pull_request, maybe_custom_branch_name, hash)) in
         pull_requests_with_maybe_custom_branch_names
             .iter()
             .enumerate()
@@ -126,6 +129,7 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
             pull_request,
             &client,
             maybe_custom_branch_name.as_deref(),
+            hash,
         )
         .await
         {

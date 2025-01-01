@@ -17,6 +17,25 @@ use crate::{
     APP_NAME, CONFIG_FILE, CONFIG_ROOT, INDENT,
 };
 
+/// Parses user inputs of the form "(<anything>)+ @ <commit-hash>"
+///
+/// Returns the user's input but also the commit hash if it exists
+pub fn parse_if_maybe_hash(input: &str, syntax: &str) -> (String, Option<String>) {
+    let parts: Vec<_> = input.split(syntax).collect();
+
+    let len = parts.len();
+
+    if len == 1 {
+        // The string does not contain any " @ ", so the user chose to use the latest commit rather than a specific one
+        (input.into(), None)
+    } else {
+        // They want to use a specific commit
+        let output: String = parts[0..len - 1].iter().map(|s| String::from(*s)).collect();
+        let commit_hash: Option<String> = Some(parts[len - 1].into());
+        (output, commit_hash)
+    }
+}
+
 pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
     println!();
 
@@ -32,6 +51,8 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
         "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
     ))?;
 
+    let (remote_branch, commit_hash) = parse_if_maybe_hash(&config.remote_branch, " @ ");
+
     if config.repo.is_empty() {
         return Err(anyhow::anyhow!(
             r#"You haven't specified a `repo` in your config, which can be for example:
@@ -41,8 +62,6 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
   For more information see this guide: https://github.com/NikitaRevenco/patchy/blob/main/README.md""#
         ));
     }
-
-    dbg!(&config);
 
     let config_files = fs::read_dir(&config_path).context(format!(
         "Could not read files in directory {:?}",
@@ -54,8 +73,8 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     let info = BranchAndRemote {
         branch: Branch {
-            upstream_branch_name: config.remote_branch.clone(),
-            local_branch_name: with_uuid(&config.remote_branch),
+            upstream_branch_name: remote_branch.clone(),
+            local_branch_name: with_uuid(&remote_branch),
         },
         remote: Remote {
             repository_url: format!("https://github.com/{}.git", config.repo),
@@ -63,7 +82,7 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
         },
     };
 
-    add_remote_branch(&info)?;
+    add_remote_branch(&info, &commit_hash)?;
 
     let previous_branch = checkout_from_remote(
         &info.branch.local_branch_name,
@@ -78,8 +97,10 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
         // TODO: make this concurrent, see https://users.rust-lang.org/t/processing-subprocesses-concurrently/79638/3
         // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads, but we can run processes in the background
         for pull_request in config.pull_requests.iter() {
+            let (pull_request, commit_hash) = parse_if_maybe_hash(pull_request, " @ ");
             // TODO: refactor this to not use such deep nesting
-            match fetch_pull_request(&config.repo, pull_request, &client, None).await {
+            match fetch_pull_request(&config.repo, &pull_request, &client, None, &commit_hash).await
+            {
                 Ok((response, info)) => {
                     match merge_pull_request(info).await {
                         Ok(()) => {

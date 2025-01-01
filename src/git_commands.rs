@@ -3,7 +3,7 @@ use std::{
     process::Output,
 };
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Result};
 use once_cell::sync::Lazy;
 use reqwest::Client;
 
@@ -57,27 +57,38 @@ pub fn get_git_root() -> anyhow::Result<PathBuf> {
 pub static GIT_ROOT: Lazy<PathBuf> =
     Lazy::new(|| get_git_root().expect("Failed to determine Git root directory"));
 
-type Git = Lazy<Box<dyn Fn(&[&str]) -> anyhow::Result<String> + Send + Sync>>;
+type Git = Lazy<Box<dyn Fn(&[&str]) -> Result<String> + Send + Sync>>;
 
 pub static GIT: Git = Lazy::new(|| {
-    Box::new(move |args: &[&str]| -> anyhow::Result<String> {
+    Box::new(move |args: &[&str]| -> Result<String> {
         get_git_output(spawn_git(args, &GIT_ROOT)?, args)
     })
 });
 
-pub fn add_remote_branch(info: &BranchAndRemote) -> anyhow::Result<()> {
+/// Fetches a branch of a remote into local. Optionally accepts a commit hash for versioning.
+pub fn add_remote_branch(
+    info: &BranchAndRemote,
+    commit_hash: &Option<String>,
+) -> anyhow::Result<()> {
     match GIT(&["remote", "add", &info.remote.local_remote_alias, &info.remote.repository_url]) {
         Ok(_) => match GIT(&[
             "fetch",
             &info.remote.repository_url,
             &format!("{}:{}", info.branch.upstream_branch_name, info.branch.local_branch_name),
         ]) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(anyhow::anyhow!("We couldn't find branch {} of GitHub repository {}. Are you sure it exists?\n{err}", info.branch.upstream_branch_name, info.remote.repository_url)),
+            Ok(_) => {
+                if let Some(commit_hash) = commit_hash {
+                    GIT(&["branch", "--force", &info.branch.local_branch_name, commit_hash]).map_err(|err| {
+                        anyhow!("We couldn't find commit {} of branch {}. Are you sure it exists?\n{err}", commit_hash, info.branch.local_branch_name)
+                    })?;
+                };
+                Ok(())
+            },
+            Err(err) => Err(anyhow!("We couldn't find branch {} of GitHub repository {}. Are you sure it exists?\n{err}", info.branch.upstream_branch_name, info.remote.repository_url)),
         },
         Err(err) => {
             GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
-            Err(anyhow::anyhow!("Could not fetch remote: {err}"))
+            Err(anyhow!("Could not fetch remote: {err}"))
         }
     }
 }
@@ -159,6 +170,7 @@ pub async fn fetch_pull_request(
     pull_request: &str,
     client: &Client,
     custom_branch_name: Option<&str>,
+    commit_hash: &Option<String>,
 ) -> anyhow::Result<(GitHubResponse, BranchAndRemote)> {
     let url = format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo);
 
@@ -192,7 +204,7 @@ pub async fn fetch_pull_request(
         },
     };
 
-    add_remote_branch(&info).context(format!(
+    add_remote_branch(&info, commit_hash).context(format!(
         "Could not add remote branch for pull request #{pull_request}, skipping."
     ))?;
 
