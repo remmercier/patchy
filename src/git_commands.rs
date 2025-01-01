@@ -35,6 +35,7 @@ pub fn spawn_git(args: &[&str], git_dir: &Path) -> Result<Output, std::io::Error
 
 /// Removes a remote it's branch
 pub fn clean_up_remote(remote: &str, branch: &str) -> anyhow::Result<()> {
+    // It's okay to do this if the script created the branch or if the user gave explicit permission
     GIT(&["branch", "--delete", "--force", branch])?;
     GIT(&["remote", "remove", remote])?;
     Ok(())
@@ -226,8 +227,8 @@ pub async fn merge_pull_request(
             "commit",
             "--message",
             &format!(
-                "{APP_NAME}: Merge branch {} of {}",
-                &info.branch.upstream_branch_name, &info.remote.repository_url
+                "{APP_NAME}: Merge branch {} of {} from pull request {}\n`patchy` is a free & open-source tool which makes it easy to manage personal forks declaratively. Check it out here: https://github.com/NikitaRevenco/patchy",
+                &info.branch.upstream_branch_name, &info.remote.repository_url, &pr_url
             ),
         ])?;
     }
