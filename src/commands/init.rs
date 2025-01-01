@@ -4,9 +4,11 @@ use std::{
 };
 
 use colored::Colorize;
+use dialoguer::Confirm;
 
 use crate::{
-    git_commands::GIT_ROOT, success, types::CommandArgs, CONFIG_FILE, CONFIG_ROOT, INDENT,
+    confirm_prompt, git_commands::GIT_ROOT, success, types::CommandArgs, CONFIG_FILE, CONFIG_ROOT,
+    INDENT,
 };
 
 pub fn init(_args: &CommandArgs) -> anyhow::Result<()> {
@@ -16,18 +18,13 @@ pub fn init(_args: &CommandArgs) -> anyhow::Result<()> {
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
-    if config_file_path.exists() {
-        let confirmation = dialoguer::Confirm::new()
-            .with_prompt(format!(
-                "\n{INDENT}{} File {config_file_path} already exists. Overwrite it?",
-                "»".black(),
-                config_file_path = config_file_path.to_string_lossy().blue()
-            ))
-            .interact()
-            .unwrap();
-        if !confirmation {
-            anyhow::bail!("Did not overwrite {config_file_path:?}");
-        }
+    if config_file_path.exists()
+        && !confirm_prompt!(
+            "File {} already exists. Overwrite it?",
+            config_file_path.to_string_lossy().blue(),
+        )
+    {
+        anyhow::bail!("Did not overwrite {config_file_path:?}");
     }
 
     let _ = fs::create_dir(config_path);

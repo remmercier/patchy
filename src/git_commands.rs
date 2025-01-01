@@ -33,6 +33,13 @@ pub fn spawn_git(args: &[&str], git_dir: &Path) -> Result<Output, std::io::Error
         .output()
 }
 
+/// Removes a remote it's branch
+pub fn clean_up_remote(remote: &str, branch: &str) -> anyhow::Result<()> {
+    GIT(&["branch", "--delete", "--force", branch])?;
+    GIT(&["remote", "remove", remote])?;
+    Ok(())
+}
+
 pub fn get_git_output(output: Output, args: &[&str]) -> anyhow::Result<String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout)
@@ -112,14 +119,8 @@ pub fn add_remote_branch(
                         ])
                         .map_err(|err| {
                             anyhow!(
-                                "We couldn't find commit {} of branch {}. Are you sure it exists?\n{err}",
-
-
-
-
-
-
-                                
+                                "We couldn't find commit {} \
+                                of branch {}. Are you sure it exists?\n{err}",
                                 commit_hash,
                                 info.branch.local_branch_name
                             )
@@ -148,18 +149,18 @@ pub fn checkout_from_remote(branch: &str, remote: &str) -> anyhow::Result<String
     let current_branch = match GIT(&["rev-parse", "--abbrev-ref", "HEAD"]) {
         Ok(current_branch) => current_branch,
         Err(err) => {
-            GIT(&["branch", "--delete", "--force", branch])?;
-            GIT(&["remote", "remove", remote])?;
-            
-            return Err(anyhow!("Couldn't get the current branch. This usually happens when the current branch does not have any commits.\n{err}"))
+            clean_up_remote(remote, branch)?;
+            return Err(anyhow!(
+                "Couldn't get the current branch. This usually happens \
+                when the current branch does not have any commits.\n{err}"
+            ));
         }
     };
 
     match GIT(&["checkout", branch]) {
         Ok(_) => Ok(current_branch),
         Err(err) => {
-            GIT(&["branch", "--delete", "--force", branch])?;
-            GIT(&["remote", "remove", remote])?;
+            clean_up_remote(remote, branch)?;
             Err(anyhow::anyhow!(
                 "Could not checkout branch: {branch}, which belongs to remote {remote}\n{err}"
             ))
@@ -231,13 +232,10 @@ pub async fn merge_pull_request(
         ])?;
     }
 
-    GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
-    GIT(&[
-        "branch",
-        "--delete",
-        "--force",
+    clean_up_remote(
+        &info.remote.local_remote_alias,
         &info.branch.local_branch_name,
-    ])?;
+    )?;
 
     Ok(())
 }

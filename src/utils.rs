@@ -92,3 +92,18 @@ macro_rules! info {
         eprintln!("{INDENT}{}{}", "ⓘ ".bright_blue().bold(), format!($($arg)*))
     }};
 }
+
+/// Interact with the user to get a yes or a no answer
+#[macro_export]
+macro_rules! confirm_prompt {
+    ($($arg:tt)*) => {{
+        Confirm::new()
+            .with_prompt(format!(
+                "\n{INDENT}{} {}",
+                "»".black(),
+                format!($($arg)*)
+            ))
+            .interact()
+            .unwrap()
+    }};
+}

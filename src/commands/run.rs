@@ -7,11 +7,11 @@ use dialoguer::Confirm;
 use crate::{
     backup::{backup_files, restore_backup},
     commands::init,
-    fail,
+    confirm_prompt, fail,
     flags::IS_VERBOSE,
     git_commands::{
-        add_remote_branch, checkout_from_remote, fetch_pull_request, merge_pull_request, GIT,
-        GIT_ROOT,
+        add_remote_branch, checkout_from_remote, clean_up_remote, fetch_pull_request,
+        merge_pull_request, GIT, GIT_ROOT,
     },
     info, success, trace,
     types::{Branch, BranchAndRemote, CommandArgs, Configuration, Remote},
@@ -48,17 +48,11 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
     let Ok(config_raw) = fs::read_to_string(config_file_path.clone()) else {
         fail!("Could not find configuration file at {CONFIG_ROOT}/{CONFIG_FILE}");
 
-        let confirmation = Confirm::new()
-            .with_prompt(format!(
-                "\n{INDENT}{} Would you like us to run {} {} to initialize it?",
-                "»".black(),
-                "patchy".blue(),
-                "init".yellow(),
-            ))
-            .interact()
-            .unwrap();
-
-        if confirmation {
+        if confirm_prompt!(
+            "Would you like us to run {} {} to initialize it?",
+            "patchy".blue(),
+            "init".yellow(),
+        ) {
             init(args)?;
         }
 
@@ -162,13 +156,12 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
 
     if let Err(err) = fs::create_dir(GIT_ROOT.join(CONFIG_ROOT)) {
         GIT(&["checkout", &previous_branch])?;
-        GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
-        GIT(&[
-            "branch",
-            "--delete",
-            "--force",
+
+        clean_up_remote(
+            &info.remote.local_remote_alias,
             &info.branch.local_branch_name,
-        ])?;
+        )?;
+
         return Err(anyhow!("Could not create directory {CONFIG_ROOT}\n{err}"));
     };
 
@@ -219,24 +212,15 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
 
     GIT(&["switch", "--create", &temporary_branch])?;
 
-    GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
-    GIT(&[
-        "branch",
-        "--delete",
-        "--force",
+    clean_up_remote(
+        &info.remote.local_remote_alias,
         &info.branch.local_branch_name,
-    ])?;
+    )?;
 
-    let confirmation = Confirm::new()
-        .with_prompt(format!(
-            "\n{INDENT}{} Overwrite branch {}? This is irreversible.",
-            "»".black(),
-            config.local_branch.cyan()
-        ))
-        .interact()
-        .unwrap();
-
-    if confirmation {
+    if confirm_prompt!(
+        "Overwrite branch {}? This is irreversible.",
+        config.local_branch.cyan()
+    ) {
         // forcefully renames the branch we are currently on into the branch specified by the user.
         // WARNING: this is a destructive action which erases the original branch
         GIT(&[
