@@ -6,6 +6,7 @@ use dialoguer::Confirm;
 
 use crate::{
     backup::{backup_files, restore_backup},
+    commands::init,
     fail,
     git_commands::{
         add_remote_branch, checkout_from_remote, fetch_pull_request, merge_pull_request, GIT,
@@ -43,9 +44,27 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
-    let config_raw = fs::read_to_string(config_file_path.clone()).context(format!(
-        "Could not find `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
-    ))?;
+    let Ok(config_raw) = fs::read_to_string(config_file_path.clone()) else {
+        fail!("Could not find configuration file at {CONFIG_ROOT}/{CONFIG_FILE}");
+
+        let confirmation = Confirm::new()
+            .with_prompt(format!(
+                "\n{INDENT}{} Would you like us to run {} {} to initialize it?",
+                "»".black(),
+                "patchy".blue(),
+                "init".yellow(),
+            ))
+            .interact()
+            .unwrap();
+
+        if confirmation {
+            init(_args)?;
+        }
+
+        // We don't want to read the default configuration file as config_raw. Since it's empty there's no reason why the user would want to run it.
+
+        std::process::exit(1);
+    };
 
     let config = toml::from_str::<Configuration>(&config_raw).context(format!(
         "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
@@ -119,7 +138,7 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
                         }
                         Err(err) => {
                             fail!(
-                                "Could not merge pull request {pr}\n\n{err:#?}",
+                                "Could not merge pull request #{pr}\n{err:?}",
                                 pr = pull_request.bright_blue()
                             );
                             continue;
