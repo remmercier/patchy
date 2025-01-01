@@ -88,30 +88,54 @@ pub fn add_remote_branch(
             );
 
             match GIT(&[
-            "fetch",
-            &info.remote.repository_url,
-            &format!("{}:{}", info.branch.upstream_branch_name, info.branch.local_branch_name),
-        ]) {
-            Ok(_) => {
-                trace!(
-                    "Fetched branch {} as {} from repository {}",
-                      info.branch.upstream_branch_name, info.branch.local_branch_name,&info.remote.repository_url
-                );
-
-                if let Some(commit_hash) = commit_hash {
-                    GIT(&["branch", "--force", &info.branch.local_branch_name, commit_hash]).map_err(|err| {
-                        anyhow!("We couldn't find commit {} of branch {}. Are you sure it exists?\n{err}", commit_hash, info.branch.local_branch_name)
-                    })?;
-
+                "fetch",
+                &info.remote.repository_url,
+                &format!(
+                    "{}:{}",
+                    info.branch.upstream_branch_name, info.branch.local_branch_name
+                ),
+            ]) {
+                Ok(_) => {
                     trace!(
-                        "...and did a hard reset to commit {commit_hash}",
+                        "Fetched branch {} as {} from repository {}",
+                        info.branch.upstream_branch_name,
+                        info.branch.local_branch_name,
+                        &info.remote.repository_url
                     );
-                    
-                };
-                Ok(())
-            },
-            Err(err) => Err(anyhow!("We couldn't find branch {} of GitHub repository {}. Are you sure it exists?\n{err}", info.branch.upstream_branch_name, info.remote.repository_url)),
-        }
+
+                    if let Some(commit_hash) = commit_hash {
+                        GIT(&[
+                            "branch",
+                            "--force",
+                            &info.branch.local_branch_name,
+                            commit_hash,
+                        ])
+                        .map_err(|err| {
+                            anyhow!(
+                                "We couldn't find commit {} of branch {}. Are you sure it exists?\n{err}",
+
+
+
+
+
+
+                                
+                                commit_hash,
+                                info.branch.local_branch_name
+                            )
+                        })?;
+
+                        trace!("...and did a hard reset to commit {commit_hash}",);
+                    };
+                    Ok(())
+                }
+                Err(err) => Err(anyhow!(
+                    "We couldn't find branch {} of GitHub repository {}. Are you sure it \
+                     exists?\n{err}",
+                    info.branch.upstream_branch_name,
+                    info.remote.repository_url
+                )),
+            }
         }
         Err(err) => {
             GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
@@ -167,25 +191,30 @@ pub fn merge_into_main(
     }
 }
 
-pub async fn merge_pull_request(info: BranchAndRemote, pull_request: &str, pr_title: &str, pr_url: &str) -> anyhow::Result<()> {
+pub async fn merge_pull_request(
+    info: BranchAndRemote,
+    pull_request: &str,
+    pr_title: &str,
+    pr_url: &str,
+) -> anyhow::Result<()> {
     if let Err(err) = merge_into_main(
         &info.branch.local_branch_name,
         &info.branch.upstream_branch_name,
     ) {
-        return Err(anyhow!("Could not merge branch {} into the current branch for pull request {pr} since the merge is non-trivial.\nYou will need to merge it yourself. Skipping this PR. Error message from git:\n{err}", &info.branch.local_branch_name.bright_cyan(), pr =
+        let pr = display_link(
+            &format!(
+                "{}{} {}",
+                "#".bright_blue(),
+                pull_request.bright_blue(),
+                pr_title.bright_blue().italic()
+            ),
+            pr_url,
+        );
 
-                                display_link(
-                                    &format!(
-                                        "{}{} {}",
-                                        "#".bright_blue(),
-                                        pull_request.bright_blue(),
-                                        pr_title.bright_blue().italic()
-                                    ),
-                                    pr_url
-                                ),
-
-
-
+        return Err(anyhow!(
+            "Could not merge branch {} into the current branch for pull request {pr} since the merge is non-trivial.\nYou will need to merge it yourself. Skipping this PR. Error \
+             message from git:\n{err}",
+            &info.branch.local_branch_name.bright_cyan()
         ));
     }
 
