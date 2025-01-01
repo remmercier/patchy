@@ -14,6 +14,11 @@ repo = ""
 #
 # remote-branch = "master"
 # remote-branch = "main"
+#
+# The above always fetch the latest commit.
+# To use a specific commit, use the following syntax -> remote-branch = "<branch> @ <hash-of-commit>", so for example:
+#
+# remote-branch = "master @ fccc58957eece10d0818dfa000bf5123e26ee32f"
 
 remote-branch = "main"
 
@@ -30,6 +35,15 @@ local-branch = "patchy"
 # Examples
 #
 # pull-requests = [ "12254", "10000", "8145"]
+# 
+# The above always fetch the latest commit for each pull request.
+# To use a specific commit, use the following syntax -> "<pull-request-number> @ <hash-of-commit>", so for example:
+#
+# pull-requests = [
+#   "12254",
+#   "10000 @ a556aeef3736a3b6b79bb9507d26224f5c0c3449",
+#   "8145 @ 840cb7e9982699ff107d0577691b5db9806b3b66"
+# ]
 
 pull-requests = []
 
