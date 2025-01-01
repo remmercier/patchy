@@ -98,7 +98,11 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
             args.next();
         };
 
-        pull_requests_with_maybe_custom_branch_names.push((arg, maybe_custom_branch_name, hash));
+        pull_requests_with_maybe_custom_branch_names.push((
+            pull_request,
+            maybe_custom_branch_name,
+            hash,
+        ));
     }
 
     // The user hasn't provided a custom remote, so we're going to try `origin`
@@ -135,7 +139,7 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
         {
             Ok((response, info)) => {
                 success!(
-                    "Fetched pull request {} available at branch {}",
+                    "Fetched pull request {} available at branch {}{}",
                     display_link(
                         &format!(
                             "{}{} {}",
@@ -145,7 +149,10 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
                         ),
                         &response.html_url
                     ),
-                    info.branch.local_branch_name.cyan()
+                    info.branch.local_branch_name.cyan(),
+                    hash.clone()
+                        .map(|commit_hash| format!(", at commit {}", commit_hash.bright_yellow()))
+                        .unwrap_or_default()
                 );
 
                 // Attempt to cleanup after ourselves
