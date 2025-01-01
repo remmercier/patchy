@@ -111,8 +111,24 @@ Running `patchy run` outputs:
 
 ![patchy output](https://github.com/user-attachments/assets/c0076588-6e57-4a80-9d05-955a4dff2580)
 
-
 With this, all I will need to do is run `patchy run` and it will automatically update all of the pull requests and sync the master branch to the latest changes.
+
+### Versioning
+
+Each pull request's branch contains commits. By default, we will always use the latest commit. However you can pin a commit to a specific version with the following syntax:
+
+```toml
+remote-branch = "main @ cfd225baedbb5fb9cbc9742f91244fa50882b580"
+
+pull-requests = [
+   "145 @ fccc58957eece10d0818dfa000bf5123e26ee32f",
+   "88 @ a556aeef3736a3b6b79bb9507d26224f5c0c3449"
+]
+```
+
+Where the hashes represent each `sha1` hash of every commit.
+
+This is handy if you don't want things to randomly break when some of the pull requests push a new change.
 
 ## Installation
 
