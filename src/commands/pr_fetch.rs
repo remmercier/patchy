@@ -150,7 +150,6 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
 
                 // Attempt to cleanup after ourselves
                 let _ = GIT(&["remote", "remove", &info.remote.local_remote_alias]);
-                dbg!(&info);
 
                 // If user uses --checkout flag, we're going to checkout the first PR only
                 if i == 0 && checkout_flag {
