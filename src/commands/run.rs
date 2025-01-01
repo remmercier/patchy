@@ -113,8 +113,6 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
 
     let client = reqwest::Client::new();
 
-    // panic!("stop");
-
     if config.pull_requests.is_empty() {
         info!("You haven't specified any pull requests to fetch in your config.")
     } else {
@@ -126,7 +124,14 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
             match fetch_pull_request(&config.repo, &pull_request, &client, None, &commit_hash).await
             {
                 Ok((response, info)) => {
-                    match merge_pull_request(info, &pull_request).await {
+                    match merge_pull_request(
+                        info,
+                        &pull_request,
+                        &response.title,
+                        &response.html_url,
+                    )
+                    .await
+                    {
                         Ok(()) => {
                             success!(
                                 "Merged pull request {}",

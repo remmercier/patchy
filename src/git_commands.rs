@@ -1,4 +1,4 @@
-use crate::INDENT;
+use crate::{utils::display_link, INDENT};
 use colored::Colorize;
 use std::{
     path::{Path, PathBuf},
@@ -167,12 +167,26 @@ pub fn merge_into_main(
     }
 }
 
-pub async fn merge_pull_request(info: BranchAndRemote, pull_request: &str) -> anyhow::Result<()> {
+pub async fn merge_pull_request(info: BranchAndRemote, pull_request: &str, pr_title: &str, pr_url: &str) -> anyhow::Result<()> {
     if let Err(err) = merge_into_main(
         &info.branch.local_branch_name,
         &info.branch.upstream_branch_name,
     ) {
-        return Err(anyhow!("Could not merge branch {} into the current branch for pull request #{pull_request}, skipping\n{err}", &info.branch.local_branch_name));
+        return Err(anyhow!("Could not merge branch {} into the current branch for pull request {pr} since the merge is non-trivial.\nYou will need to merge it yourself. Skipping this PR. Error message from git:\n{err}", &info.branch.local_branch_name.bright_cyan(), pr =
+
+                                display_link(
+                                    &format!(
+                                        "{}{} {}",
+                                        "#".bright_blue(),
+                                        pull_request.bright_blue(),
+                                        pr_title.bright_blue().italic()
+                                    ),
+                                    pr_url
+                                ),
+
+
+
+        ));
     }
 
     let has_unstaged_changes = GIT(&["diff", "--cached", "--quiet"]).is_err();
