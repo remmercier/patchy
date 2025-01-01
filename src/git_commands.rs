@@ -94,7 +94,12 @@ pub fn add_remote_branch(
 }
 
 pub fn checkout_from_remote(branch: &str, remote: &str) -> anyhow::Result<String> {
-    let current_branch = GIT(&["rev-parse", "--abbrev-ref", "HEAD"])?;
+    let current_branch = match GIT(&["rev-parse", "--abbrev-ref", "HEAD"]) {
+        Ok(current_branch) => current_branch,
+        Err(err) => {
+            return Err(anyhow!("Couldn't get the current branch. This usually happens when you have no commits.\n{err}"))
+        }
+    };
 
     match GIT(&["checkout", branch]) {
         Ok(_) => Ok(current_branch),
