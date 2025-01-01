@@ -78,6 +78,15 @@ macro_rules! fail {
 }
 
 #[macro_export]
+macro_rules! trace {
+    ($($arg:tt)*) => {{
+        if *IS_VERBOSE {
+            eprintln!("{INDENT}{}{}", "--verbose: ".bright_yellow().bold(), format!($($arg)*))
+        }
+    }};
+}
+
+#[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {{
         eprintln!("{INDENT}{}{}", "ⓘ ".bright_blue().bold(), format!($($arg)*))

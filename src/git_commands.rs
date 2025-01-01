@@ -1,3 +1,5 @@
+use crate::INDENT;
+use colored::Colorize;
 use std::{
     path::{Path, PathBuf},
     process::Output,
@@ -8,6 +10,8 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 
 use crate::{
+    flags::IS_VERBOSE,
+    trace,
     types::{Branch, BranchAndRemote, GitHubResponse, Remote},
     utils::{make_request, normalize_commit_msg, with_uuid},
     APP_NAME,
@@ -70,22 +74,45 @@ pub fn add_remote_branch(
     info: &BranchAndRemote,
     commit_hash: &Option<String>,
 ) -> anyhow::Result<()> {
-    match GIT(&["remote", "add", &info.remote.local_remote_alias, &info.remote.repository_url]) {
-        Ok(_) => match GIT(&[
+    match GIT(&[
+        "remote",
+        "add",
+        &info.remote.local_remote_alias,
+        &info.remote.repository_url,
+    ]) {
+        Ok(_) => {
+            trace!(
+                "Added remote {} for repository {}",
+                &info.remote.repository_url,
+                &info.remote.local_remote_alias
+            );
+
+            match GIT(&[
             "fetch",
             &info.remote.repository_url,
             &format!("{}:{}", info.branch.upstream_branch_name, info.branch.local_branch_name),
         ]) {
             Ok(_) => {
+                trace!(
+                    "Fetched branch {} as {} from repository {}",
+                      info.branch.upstream_branch_name, info.branch.local_branch_name,&info.remote.repository_url
+                );
+
                 if let Some(commit_hash) = commit_hash {
                     GIT(&["branch", "--force", &info.branch.local_branch_name, commit_hash]).map_err(|err| {
                         anyhow!("We couldn't find commit {} of branch {}. Are you sure it exists?\n{err}", commit_hash, info.branch.local_branch_name)
                     })?;
+
+                    trace!(
+                        "...and did a hard reset to commit {commit_hash}",
+                    );
+                    
                 };
                 Ok(())
             },
             Err(err) => Err(anyhow!("We couldn't find branch {} of GitHub repository {}. Are you sure it exists?\n{err}", info.branch.upstream_branch_name, info.remote.repository_url)),
-        },
+        }
+        }
         Err(err) => {
             GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
             Err(anyhow!("Could not fetch remote: {err}"))
@@ -137,14 +164,13 @@ pub fn merge_into_main(
     }
 }
 
-pub async fn merge_pull_request(info: BranchAndRemote) -> anyhow::Result<()> {
-    merge_into_main(
+pub async fn merge_pull_request(info: BranchAndRemote, pull_request: &str) -> anyhow::Result<()> {
+    if let Err(err) = merge_into_main(
         &info.branch.local_branch_name,
         &info.branch.upstream_branch_name,
-    )
-    .context(
-        "Could not merge branch into the current branch for pull request #{pull_request}, skipping",
-    )?;
+    ) {
+        return Err(anyhow!("Could not merge branch {} into the current branch for pull request #{pull_request}, skipping\n{err}", &info.branch.local_branch_name));
+    }
 
     let has_unstaged_changes = GIT(&["diff", "--cached", "--quiet"]).is_err();
 

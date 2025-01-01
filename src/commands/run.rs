@@ -1,6 +1,6 @@
 use std::fs;
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use colored::Colorize;
 use dialoguer::Confirm;
 
@@ -8,11 +8,12 @@ use crate::{
     backup::{backup_files, restore_backup},
     commands::init,
     fail,
+    flags::IS_VERBOSE,
     git_commands::{
         add_remote_branch, checkout_from_remote, fetch_pull_request, merge_pull_request, GIT,
         GIT_ROOT,
     },
-    info, success,
+    info, success, trace,
     types::{Branch, BranchAndRemote, CommandArgs, Configuration, Remote},
     utils::{display_link, with_uuid},
     APP_NAME, CONFIG_FILE, CONFIG_ROOT, INDENT,
@@ -37,7 +38,7 @@ pub fn parse_if_maybe_hash(input: &str, syntax: &str) -> (String, Option<String>
     }
 }
 
-pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
+pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
     println!();
 
     let config_path = GIT_ROOT.join(CONFIG_ROOT);
@@ -58,13 +59,15 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
             .unwrap();
 
         if confirmation {
-            init(_args)?;
+            init(args)?;
         }
 
         // We don't want to read the default configuration file as config_raw. Since it's empty there's no reason why the user would want to run it.
 
         std::process::exit(1);
     };
+
+    trace!("Using configuration file {config_file_path:?}");
 
     let config = toml::from_str::<Configuration>(&config_raw).context(format!(
         "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
@@ -88,7 +91,7 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
     ))?;
 
     let backed_up_files = backup_files(config_files)
-        .context(format!("Could not {} configuration files", crate::APP_NAME))?;
+        .context("Could not create backups for configuration files, aborting.")?;
 
     let info = BranchAndRemote {
         branch: Branch {
@@ -110,6 +113,8 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
 
     let client = reqwest::Client::new();
 
+    // panic!("stop");
+
     if config.pull_requests.is_empty() {
         info!("You haven't specified any pull requests to fetch in your config.")
     } else {
@@ -121,7 +126,7 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
             match fetch_pull_request(&config.repo, &pull_request, &client, None, &commit_hash).await
             {
                 Ok((response, info)) => {
-                    match merge_pull_request(info).await {
+                    match merge_pull_request(info, &pull_request).await {
                         Ok(()) => {
                             success!(
                                 "Merged pull request {}",
@@ -137,10 +142,7 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
                             )
                         }
                         Err(err) => {
-                            fail!(
-                                "Could not merge pull request #{pr}\n{err:?}",
-                                pr = pull_request.bright_blue()
-                            );
+                            fail!("{err}");
                             continue;
                         }
                     };
@@ -162,7 +164,7 @@ pub async fn run(_args: &CommandArgs) -> anyhow::Result<()> {
             "--force",
             &info.branch.local_branch_name,
         ])?;
-        return Err(anyhow::anyhow!(err).context("Could not create directory {CONFIG_ROOT}"));
+        return Err(anyhow!("Could not create directory {CONFIG_ROOT}\n{err}"));
     };
 
     for (file_name, _file, contents) in backed_up_files.iter() {

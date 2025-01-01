@@ -1,7 +1,10 @@
+use std::env;
+
 use colored::Colorize;
 use indexmap::IndexSet;
+use once_cell::sync::Lazy;
 
-use crate::commands::help::format_description;
+use crate::{commands::help::format_description, types::CommandArgs};
 
 pub struct Flag<'a> {
     pub short: &'a str,
@@ -62,3 +65,8 @@ pub fn format_flag(flag: &Flag) -> String {
         format_description(flag.description)
     )
 }
+
+pub static IS_VERBOSE: Lazy<bool> = Lazy::new(|| {
+    let args: CommandArgs = env::args().collect();
+    args.contains("--verbose")
+});

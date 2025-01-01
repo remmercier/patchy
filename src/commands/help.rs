@@ -24,6 +24,12 @@ pub static HELP_FLAG: Flag<'static> = Flag {
     description: "Print this message",
 };
 
+pub static VERBOSE_FLAG: Flag<'static> = Flag {
+    short: "-V",
+    long: "--verbose",
+    description: "Increased logging information",
+};
+
 pub static VERSION_FLAG: Flag<'static> = Flag {
     short: "-v",
     long: "--version",
