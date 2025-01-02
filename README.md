@@ -1,8 +1,17 @@
 # patchy
 
-`patchy` makes life simple when you just want to use a repository with some of the pull requests from that repository merged into your personal fork.
+`patchy` makes it easy to maintain personal forks in which you merge some pull requests of your liking to have more features than other people.
 
-Let's go on a pull request shopping spree together!
+- [Why should I use it?](#why-should-i-use-it)
+- [Usage](#usage)
+  - [Patches](#patches)
+  - [Config](#config)
+  - [Versioning](#versioning)
+- [Installation](#installation)
+  - [Binary](#binary)
+  - [PowerShell](#powershell)
+  - [Homebrew](#homebrew)
+  - [Nix](#nix)
 
 ## Why should I use it?
 
@@ -132,4 +141,36 @@ This is handy if you don't want things to randomly break when some of the pull r
 
 ## Installation
 
-TODO: add section
+Patchy can be installed on Linux, Windows and macOS.
+
+### Binary
+
+Install the binary directly into your system, available for macOS and Linux.
+
+Recommended for Linux users.
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/NikitaRevenco/patchy/releases/latest/download/patchy-installer.sh | sh
+```
+
+### PowerShell
+
+Recommended for Windows users.
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://github.com/NikitaRevenco/patchy/releases/latest/download/patchy-installer.ps1 | iex"
+```
+
+### Homebrew
+
+Recommended for macOS users.
+
+```bash
+brew install NikitaRevenco/tap/patchy
+```
+
+### Nix
+
+```bash
+nix profile install github:NikitaRevenco/patchy/main
+```
