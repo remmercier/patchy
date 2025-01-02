@@ -153,20 +153,26 @@ Recommended for Linux users.
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/NikitaRevenco/patchy/releases/latest/download/patchy-installer.sh | sh
 ```
 
-### PowerShell
-
-Recommended for Windows users.
-
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://github.com/NikitaRevenco/patchy/releases/latest/download/patchy-installer.ps1 | iex"
-```
-
 ### Homebrew
 
 Recommended for macOS users.
 
 ```bash
 brew install NikitaRevenco/tap/patchy
+```
+
+### Cargo
+
+```bash
+cargo install patchy-bin
+```
+
+### PowerShell
+
+Recommended for Windows users.
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://github.com/NikitaRevenco/patchy/releases/latest/download/patchy-installer.ps1 | iex"
 ```
 
 ### Nix
