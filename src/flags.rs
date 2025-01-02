@@ -22,6 +22,7 @@ pub struct Flag<'a> {
 /// let my_flag = Flag {
 ///     short: "-r=",
 ///     long: "--remote-name=",
+///     description: "some flag", 
 /// };
 ///
 /// let long_version = extract_value_from_flag("--remote-name=abc", &my_flag);
