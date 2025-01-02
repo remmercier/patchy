@@ -44,10 +44,10 @@ patchy gen-patch 7bb8ec5a77769d88855d41dd5fecfaece54cf471
 It generated a file, `.patchy/feat-swap-light-and-dark-colors.patch`:
 
 ```patch
-diff --git a/README.md b/README.md
+diff --git a/README.md m/README.md
 index 11a909b2..4eae6a8d 100644
 --- a/README.md
-+++ b/README.md
++++ m/README.md
 @@ -2,8 +2,8 @@
 
  <h1>
