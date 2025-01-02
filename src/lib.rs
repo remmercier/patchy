@@ -7,5 +7,5 @@ pub mod utils;
 
 pub static CONFIG_ROOT: &str = ".patchy";
 pub static CONFIG_FILE: &str = "config.toml";
-pub static APP_NAME: &str = env!("CARGO_PKG_NAME");
+pub static APP_NAME: &str = "patchy";
 pub static INDENT: &str = "  ";
