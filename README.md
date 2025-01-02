@@ -4,8 +4,8 @@
 
 - [Why should I use it?](#why-should-i-use-it)
 - [Usage](#usage)
-  - [Patches](#patches)
   - [Config](#config)
+  - [Patches](#patches)
   - [Versioning](#versioning)
 - [Installation](#installation)
   - [Binary](#binary)
@@ -33,6 +33,52 @@ Invoke `patchy` by running the following command:
 ```sh
 patchy run
 ```
+
+### Config
+
+Generate the sample config:
+
+```sh
+patchy init
+```
+
+This is a real-world example, specifically I myself used it at some point. I'm using the [Helix Editor](https://github.com/helix-editor/helix) but there are some pull requests which add awesome features. I found myself very frequently doing the same tasks in order to sync the 4 pull requests I like to use.
+
+Here's my config:
+
+```toml
+# main repository to fetch from
+repo = "helix-editor/helix"
+
+# the repository's branch
+remote-branch = "master"
+
+# This is the branch where you will see all result from patchy's work. Set it to any branch you want.
+# WARNING: Make sure you do not store any important work on this branch. It will be erased.
+local-branch = "patchy"
+
+# List of pull requests which you would like to merge
+# TIP: Add comments above pull requests to help yourself understand which PRs do what
+pull-requests = [
+  # syntax highlighting for nginx files
+  "12309",
+  # adds file explorer
+  "11285",
+  # global status line
+  "8908",
+  # command expansions
+  "11164",
+]
+
+# A list of patches to apply, more on them later
+patches = ["remove-tab"]
+```
+
+Running `patchy run` outputs:
+
+![patchy output](https://github.com/user-attachments/assets/c0076588-6e57-4a80-9d05-955a4dff2580)
+
+With this, all I will need to do is run `patchy run` and it will automatically update all of the pull requests and sync the master branch to the latest changes.
 
 ### Patches
 
@@ -77,51 +123,6 @@ To use your new `.patch`, edit your `.patchy/config.toml` like so:
 +++ patcher = [ "feat-swap-light-and-dark-colors" ]
 ```
 
-### Config
-
-Generate the sample config:
-
-```sh
-patchy init
-```
-
-This is a real-world example, specifically I myself used it at some point. I'm using the [Helix Editor](https://github.com/helix-editor/helix) but there are some pull requests which add awesome features. I found myself very frequently doing the same tasks in order to sync the 4 pull requests I like to use.
-
-Here's my config:
-
-```toml
-# main repository to fetch from
-repo = "helix-editor/helix"
-
-# the repository's branch
-remote-branch = "master"
-
-# This is the branch where you will see all result from patchy's work. Set it to any branch you want.
-# WARNING: Make sure you do not store any important work on this branch. It will be erased.
-local-branch = "patchy"
-
-# List of pull requests which you would like to merge
-# TIP: Add comments above pull requests to help yourself understand which PRs do what
-pull-requests = [
-  # syntax highlighting for nginx files
-  "12309",
-  # adds file explorer
-  "11285",
-  # global status line
-  "8908",
-  # command expansions
-  "11164",
-]
-
-# A list of patches to apply
-patches = ["remove-tab"]
-```
-
-Running `patchy run` outputs:
-
-![patchy output](https://github.com/user-attachments/assets/c0076588-6e57-4a80-9d05-955a4dff2580)
-
-With this, all I will need to do is run `patchy run` and it will automatically update all of the pull requests and sync the master branch to the latest changes.
 
 ### Versioning
 
