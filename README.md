@@ -9,8 +9,9 @@
   - [Versioning](#versioning)
 - [Installation](#installation)
   - [Binary](#binary)
-  - [PowerShell](#powershell)
   - [Homebrew](#homebrew)
+  - [Cargo](#cargo)
+  - [PowerShell](#powershell)
   - [Nix](#nix)
 
 ## Why should I use it?
