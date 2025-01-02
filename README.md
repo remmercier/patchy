@@ -36,7 +36,7 @@ patchy run
 
 ### Config
 
-I'm using the [Helix Editor](https://github.com/helix-editor/helix) but there are some pull requests which add awesome features. 
+I'm using the [Helix Editor](https://github.com/helix-editor/helix) but there are some pull requests which add awesome features.
 
 I found myself very frequently doing the same tasks in order to sync the 4 pull requests I like to use and keep them up to date. With patchy, I just run one command and it handles the rest.
 
@@ -119,7 +119,6 @@ To use your new `.patch`, edit your `.patchy/config.toml` like so:
 +++ patcher = [ "feat-swap-light-and-dark-colors" ]
 ```
 
-
 ### Versioning
 
 Each pull request's branch contains commits. By default, we will always use the latest commit. However you can pin a commit to a specific version with the following syntax:
@@ -178,3 +177,25 @@ powershell -ExecutionPolicy ByPass -c "irm https://github.com/NikitaRevenco/patc
 ```bash
 nix profile install github:NikitaRevenco/patchy/main
 ```
+
+## Example usage with NixOS
+
+If the software you are using has a `flake.nix` which automatically builds this software, then using patchy with it is straightforward.
+
+1. Use patchy to create your own remote fork.
+
+   Let's say you fork the [`helix-editor/helix`](https://github.com/helix-editor/helix) and your fork is located at `your-username/helix`, the patchy branch is called `patchy`
+
+1. Add your fork's input in your `flake.nix` as follows:
+
+   ```nix
+   inputs.helix.url = "github:your-username/helix/patchy";
+   ```
+
+1. Use the input in your home-manager:
+
+   ```nix
+   programs.helix.package = inputs.helix.packages.${pkgs.system}.helix;
+   ```
+
+This is easier when the target repository has a `flake.nix` which fully builds the software. Which, the [`helix-editor/helix`](https://github.com/helix-editor/helix) does have for example.
