@@ -156,7 +156,7 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/NikitaRevenco/patchy/re
 Recommended for macOS users.
 
 ```bash
-brew install NikitaRevenco/tap/patchy
+brew install NikitaRevenco/tap/patchy-bin
 ```
 
 ### Cargo
