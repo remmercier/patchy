@@ -227,7 +227,7 @@ pub async fn merge_pull_request(
             "commit",
             "--message",
             &format!(
-                "{APP_NAME}: auto-merge pull request {}\n`patchy` is a free & open-source tool which makes it easy to manage personal forks declaratively.
+                "{APP_NAME}: auto-merge pull request {}\n`patchy` is a tool which makes it easy to declaratively manage personal forks by automatically merging pull requests.
 
 Check it out here: https://github.com/NikitaRevenco/patchy",
                 &pr_url

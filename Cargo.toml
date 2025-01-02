@@ -2,6 +2,17 @@
 name = "patchy"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["Nikita Revenco"]
+description = "A tool which makes it easy to declaratively manage personal forks by automatically merging pull requests"
+repository = "https://github.com/NikitaRevenco/patchy"
+homepage = "https://github.com/NikitaRevenco/patchy"
+
+[package.metadata.wix]
+upgrade-guid = "5868B076-2779-431F-9B51-0B12B052711C"
+path-guid = "17921C69-1BA1-422E-BCFC-0F5C960BEDF0"
+license = false
+eula = false
 
 [dependencies]
 anyhow = "1.0"
@@ -21,3 +32,8 @@ dialoguer = "0.11"
 futures = "0.3"
 indexmap = "2.7"
 once_cell = "1.17"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
