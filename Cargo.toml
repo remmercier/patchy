@@ -1,12 +1,16 @@
 [package]
 name = "patchy-bin"
-version = "1.1.1"
+version = "1.1.2"
 edition = "2021"
 license = "MIT"
 authors = ["Nikita Revenco"]
 description = "A tool which makes it easy to declaratively manage personal forks by automatically merging pull requests"
 repository = "https://github.com/NikitaRevenco/patchy"
 homepage = "https://github.com/NikitaRevenco/patchy"
+
+[[bin]]
+name = "patchy"
+path = "src/main.rs"
 
 [lib]
 name = "patchy"
