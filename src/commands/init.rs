@@ -21,7 +21,7 @@ pub fn init(_args: &CommandArgs) -> anyhow::Result<()> {
     if config_file_path.exists()
         && !confirm_prompt!(
             "File {} already exists. Overwrite it?",
-            config_file_path.to_string_lossy().blue(),
+            config_file_path.to_string_lossy().bright_blue(),
         )
     {
         anyhow::bail!("Did not overwrite {config_file_path:?}");

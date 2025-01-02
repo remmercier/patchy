@@ -145,11 +145,11 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
                             "{}{} {}",
                             "#".bright_blue(),
                             pull_request.bright_blue(),
-                            response.title.blue().italic()
+                            response.title.bright_blue().italic()
                         ),
                         &response.html_url
                     ),
-                    info.branch.local_branch_name.cyan(),
+                    info.branch.local_branch_name.bright_cyan(),
                     hash.clone()
                         .map(|commit_hash| format!(", at commit {}", commit_hash.bright_yellow()))
                         .unwrap_or_default()

@@ -50,8 +50,8 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
 
         if confirm_prompt!(
             "Would you like us to run {} {} to initialize it?",
-            "patchy".blue(),
-            "init".yellow(),
+            "patchy".bright_blue(),
+            "init".bright_yellow(),
         ) {
             init(args)?;
         }
@@ -134,7 +134,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
                                         "{}{} {}",
                                         "#".bright_blue(),
                                         pull_request.bright_blue(),
-                                        &response.title.blue().italic()
+                                        &response.title.bright_blue().italic()
                                     ),
                                     &response.html_url
                                 ),
@@ -194,7 +194,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
                         .lines()
                         .next()
                         .unwrap_or_default()
-                        .blue()
+                        .bright_blue()
                         .italic()
                 );
             }
@@ -230,13 +230,13 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
-        println!("\n{INDENT}{}", "  Success!\n".green().bold());
+        println!("\n{INDENT}{}", "  Success!\n".bright_green().bold());
     } else {
         let command = format!(
             "  git branch --move --force {temporary_branch} {}",
             config.local_branch
         );
-        let command = format!("\n{INDENT}{}\n", command.magenta(),);
+        let command = format!("\n{INDENT}{}\n", command.bright_magenta(),);
         println!(
             "\n{INDENT}  You can still manually overwrite {} with the following command:\n  {command}",
             config.local_branch.cyan(),

@@ -10,12 +10,12 @@ use crate::{
 };
 
 fn format_subcommand(command: &str, description: &str) -> String {
-    let command = command.yellow();
+    let command = command.bright_yellow();
     format!("{command}\n    {}", format_description(description))
 }
 
 pub fn format_description(description: &str) -> String {
-    format!("{} {description}", "»".black())
+    format!("{} {description}", "»".bright_black())
 }
 
 pub static HELP_FLAG: Flag<'static> = Flag {
@@ -38,13 +38,13 @@ pub static VERSION_FLAG: Flag<'static> = Flag {
 
 pub fn help(command: Option<&str>) -> anyhow::Result<()> {
     let author = "Nikita Revenco ".italic();
-    let less_than = "<".black().italic();
+    let less_than = "<".bright_black().italic();
     let email = "pm@nikitarevenco.com".italic();
-    let greater_than = ">".black().italic();
-    let app_name = APP_NAME.blue();
-    let flags_label = "[<flags>]".magenta();
-    let command_str = "<command>".yellow();
-    let args = "[<args>]".green();
+    let greater_than = ">".bright_black().italic();
+    let app_name = APP_NAME.bright_blue();
+    let flags_label = "[<flags>]".bright_magenta();
+    let command_str = "<command>".bright_yellow();
+    let args = "[<args>]".bright_green();
     let version = env!("CARGO_PKG_VERSION");
     let init = format_subcommand("init", "Create example config file");
     let pr_fetch = format_subcommand(
@@ -62,7 +62,7 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
 
     match command {
         Some(cmd_name @ "init") => {
-            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
+            let this_command_name = format!("{app_name} {}", cmd_name.bright_yellow());
 
             let description = format_description("Create example config file");
 
@@ -82,7 +82,7 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
             );
         }
         Some(cmd_name @ "run") => {
-            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
+            let this_command_name = format!("{app_name} {}", cmd_name.bright_yellow());
 
             let description = format_description("Create example config file");
 
@@ -102,7 +102,7 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
             );
         }
         Some(cmd_name @ "gen-patch") => {
-            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
+            let this_command_name = format!("{app_name} {}", cmd_name.bright_yellow());
 
             let patch_filename_flag = format_flag(&GEN_PATCH_NAME_FLAG);
 
@@ -111,25 +111,25 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
             let example_1 = format!(
                 "{}
     {}",
-                "133cbaae83f710b793c98018cea697a04479bbe4".green(),
+                "133cbaae83f710b793c98018cea697a04479bbe4".bright_green(),
                 format_description("Generate a single .patch file from one commit hash")
             );
 
             let example_2 = format!(
                 "{}
     {}",
-                "133cbaae83f710b793c98018cea697a04479bbe4 9ad5aa637ccf363b5d6713f66d0c2830736c35a9 cc75a895f344cf2fe83eaf6d78dfb7aeac8b33a4".green(),
+                "133cbaae83f710b793c98018cea697a04479bbe4 9ad5aa637ccf363b5d6713f66d0c2830736c35a9 cc75a895f344cf2fe83eaf6d78dfb7aeac8b33a4".bright_green(),
                 format_description("Generate several .patch files from several commit hashes")
             );
 
             let example_3 = format!(
                 "{} {} {} {} {}
     {}",
-                "133cbaae83f710b793c98018cea697a04479bbe4".green(),
-                "--patch-filename=some-patch".magenta(),
-                "9ad5aa637ccf363b5d6713f66d0c2830736c35a9".green(),
-                "--patch-filename=another-patch".magenta(),
-                "cc75a895f344cf2fe83eaf6d78dfb7aeac8b33a4".green(),
+                "133cbaae83f710b793c98018cea697a04479bbe4".bright_green(),
+                "--patch-filename=some-patch".bright_magenta(),
+                "9ad5aa637ccf363b5d6713f66d0c2830736c35a9".bright_green(),
+                "--patch-filename=another-patch".bright_magenta(),
+                "cc75a895f344cf2fe83eaf6d78dfb7aeac8b33a4".bright_green(),
                 format_description(
                     "Generate several .patch files from several commit hashes and give 2 of them custom names"
                 )
@@ -166,25 +166,25 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
             let example_1 = format!(
                 "{}
     {}",
-                "11745".green(),
+                "11745".bright_green(),
                 format_description("Fetch a single pull request")
             );
 
             let example_2 = format!(
                 "{}
     {}",
-                "11745 10000 9191 600".green(),
+                "11745 10000 9191 600".bright_green(),
                 format_description("Fetch several pull requests")
             );
 
             let example_3 = format!(
                 "{} {} {} {} {}
     {}",
-                "11745 10000".green(),
-                "--branch-name=some-pr".magenta(),
-                "9191".green(),
-                "--branch-name=another-pr".magenta(),
-                "600".green(),
+                "11745 10000".bright_green(),
+                "--branch-name=some-pr".bright_magenta(),
+                "9191".bright_green(),
+                "--branch-name=another-pr".bright_magenta(),
+                "600".bright_green(),
                 format_description(
                     "Fetch several pull requests and choose custom branch names for the pull requests #10000 and #9191"
                 )
@@ -193,23 +193,23 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
             let example_4 = format!(
                 "{} {} {}
     {}",
-                "--repo-name=helix-editor/helix".magenta(),
-                "11745 10000 9191 600".green(),
-                "--checkout".magenta(),
+                "--repo-name=helix-editor/helix".bright_magenta(),
+                "11745 10000 9191 600".bright_green(),
+                "--checkout".bright_magenta(),
                 format_description("Fetch several pull requests, checkout the first one and use a custom github repo: https://github.com/helix-editor/helix")
             );
 
             let example_5 = format!(
                 "{}
     {}",
-                "11745 10000@be8f264327f6ae729a0b372ef01f6fde49a78310 9191 600@5d10fa5beb917a0dbe0ef8441d14b3d0dd15227b".green(),
+                "11745 10000@be8f264327f6ae729a0b372ef01f6fde49a78310 9191 600@5d10fa5beb917a0dbe0ef8441d14b3d0dd15227b".bright_green(),
                 format_description("Fetch several pull requests at a certain commit")
             );
 
             let branch_name_flag = format_flag(&PR_FETCH_BRANCH_NAME_FLAG);
             let checkout_flag = format_flag(&PR_FETCH_CHECKOUT_FLAG);
             let repo_name_flag = format_flag(&PR_FETCH_REPO_NAME_FLAG);
-            let this_command_name = format!("{app_name} {}", cmd_name.yellow());
+            let this_command_name = format!("{app_name} {}", cmd_name.bright_yellow());
 
             println!(
                 "

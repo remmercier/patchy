@@ -59,9 +59,9 @@ pub fn is_valid_flag(arg: &str, available_flags: &[&Flag]) -> bool {
 pub fn format_flag(flag: &Flag) -> String {
     format!(
         "{}{}{}\n    {}",
-        flag.short.magenta(),
-        ", ".black(),
-        flag.long.magenta(),
+        flag.short.bright_magenta(),
+        ", ".bright_black(),
+        flag.long.bright_magenta(),
         format_description(flag.description)
     )
 }

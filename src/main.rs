@@ -26,12 +26,12 @@ async fn process_subcommand(subcommand: &str, args: CommandArgs) -> Result<()> {
                         "  Unknown {unknown}: {}",
                         unrecognized,
                         unknown = if unrecognized.starts_with("-") {
-                            "flag".red()
+                            "flag".bright_red()
                         } else {
-                            "command".red()
+                            "command".bright_red()
                         }
                     )
-                    .red()
+                    .bright_red()
                 )
             }
 

@@ -100,7 +100,7 @@ macro_rules! confirm_prompt {
         Confirm::new()
             .with_prompt(format!(
                 "\n{INDENT}{} {}",
-                "»".black(),
+                "»".bright_black(),
                 format!($($arg)*)
             ))
             .interact()
