@@ -677,7 +677,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "patchy"
+name = "patchy-bin"
 version = "1.1.0"
 dependencies = [
  "anyhow",

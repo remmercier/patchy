@@ -1,5 +1,5 @@
 [package]
-name = "patchy"
+name = "patchy-bin"
 version = "1.1.0"
 edition = "2021"
 license = "MIT"
@@ -7,6 +7,9 @@ authors = ["Nikita Revenco"]
 description = "A tool which makes it easy to declaratively manage personal forks by automatically merging pull requests"
 repository = "https://github.com/NikitaRevenco/patchy"
 homepage = "https://github.com/NikitaRevenco/patchy"
+
+[lib]
+name = "patchy"
 
 [package.metadata.wix]
 upgrade-guid = "5868B076-2779-431F-9B51-0B12B052711C"
