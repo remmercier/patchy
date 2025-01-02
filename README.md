@@ -36,13 +36,9 @@ patchy run
 
 ### Config
 
-Generate the sample config:
+I'm using the [Helix Editor](https://github.com/helix-editor/helix) but there are some pull requests which add awesome features. 
 
-```sh
-patchy init
-```
-
-This is a real-world example, specifically I myself used it at some point. I'm using the [Helix Editor](https://github.com/helix-editor/helix) but there are some pull requests which add awesome features. I found myself very frequently doing the same tasks in order to sync the 4 pull requests I like to use.
+I found myself very frequently doing the same tasks in order to sync the 4 pull requests I like to use and keep them up to date. With patchy, I just run one command and it handles the rest.
 
 Here's my config:
 
