@@ -66,7 +66,7 @@ pull-requests = [
   "11164",
 ]
 
-# A list of patches to apply, more on them later
+# An optional list of patches to apply, more on them later
 patches = ["remove-tab"]
 ```
 
