@@ -116,7 +116,7 @@ To use your new `.patch`, edit your `.patchy/config.toml` like so:
 
 ```diff
 --- patches = []
-+++ patcher = [ "feat-swap-light-and-dark-colors" ]
++++ patches = [ "feat-swap-light-and-dark-colors" ]
 ```
 
 ### Versioning
