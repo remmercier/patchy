@@ -144,8 +144,8 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
                         &format!(
                             "{}{}{}{}",
                             "#".bright_blue(),
-                            " ".bright_blue(),
                             pull_request.bright_blue(),
+                            " ".bright_blue(),
                             response.title.bright_blue().italic()
                         ),
                         &response.html_url

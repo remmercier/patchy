@@ -175,20 +175,20 @@ pub fn merge_into_main(
 ) -> anyhow::Result<String, anyhow::Error> {
     match GIT(&["merge", local_branch, "--no-commit", "--no-ff"]) {
         Ok(_) => Ok(format!("Merged {remote_branch} successfully")),
-        Err(_) => {
+        Err(err) => {
             let files_with_conflicts = GIT(&["diff", "--name-only", "--diff-filter=U"])?;
             for file_with_conflict in files_with_conflicts.lines() {
+                // We can likely not worry about markdown files having merge conflicts as those are usually for documentation, and don't affect the software in general if merged incorrectly
                 if file_with_conflict.ends_with(".md") {
                     GIT(&["checkout", "--ours", file_with_conflict])?;
                     GIT(&["add", file_with_conflict])?;
                 } else {
                     GIT(&["merge", "--abort"])?;
-                    return Err(anyhow::anyhow!(
-                        "Unresolved conflict in {file_with_conflict}"
-                    ));
+                    // But if there's at least 1 file we can't merge, we abort the entire attempt
+                    return Err(err);
                 }
             }
-            Ok("Merged {remote_branch} successfully and disregarded conflicts".into())
+            Ok("Merged {remote_branch} successfully".into())
         }
     }
 }
@@ -207,8 +207,8 @@ pub async fn merge_pull_request(
             &format!(
                 "{}{}{}{}",
                 "#".bright_blue(),
-                " ".bright_blue(),
                 pull_request.bright_blue(),
+                " ".bright_blue(),
                 pr_title.bright_blue().italic()
             ),
             pr_url,
