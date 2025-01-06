@@ -4,6 +4,7 @@ use crate::{
     commands::{
         gen_patch::GEN_PATCH_NAME_FLAG,
         pr_fetch::{PR_FETCH_BRANCH_NAME_FLAG, PR_FETCH_CHECKOUT_FLAG, PR_FETCH_REPO_NAME_FLAG},
+        run::RUN_YES_FLAG,
     },
     flags::{format_flag, Flag},
     APP_NAME,
@@ -86,6 +87,8 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
 
             let description = format_description("Create example config file");
 
+            let run_yes_flag = format_flag(&RUN_YES_FLAG);
+
             println!(
                 "
 {header}
@@ -98,6 +101,8 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
   Flags:
 
     {help_flag}
+
+    {run_yes_flag}
 ",
             );
         }

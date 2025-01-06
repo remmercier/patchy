@@ -8,7 +8,7 @@ use crate::{
     backup::{backup_files, restore_backup},
     commands::init,
     confirm_prompt, fail,
-    flags::IS_VERBOSE,
+    flags::{contains_flag, Flag, IS_VERBOSE},
     git_commands::{
         add_remote_branch, checkout_from_remote, clean_up_remote, fetch_pull_request,
         merge_pull_request, GIT, GIT_ROOT,
@@ -17,6 +17,12 @@ use crate::{
     types::{Branch, BranchAndRemote, CommandArgs, Configuration, Remote},
     utils::{display_link, with_uuid},
     APP_NAME, CONFIG_FILE, CONFIG_ROOT, INDENT,
+};
+
+pub static RUN_YES_FLAG: Flag<'static> = Flag {
+    short: "-y",
+    long: "--yes",
+    description: "Do not prompt when overwriting local-branch specified in the config",
 };
 
 /// Parses user inputs of the form "(<anything>)+ @ <commit-hash>"
@@ -42,23 +48,36 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
     println!();
 
     let config_path = GIT_ROOT.join(CONFIG_ROOT);
+    let has_yes_flag = contains_flag(args, &RUN_YES_FLAG);
 
     let config_file_path = config_path.join(CONFIG_FILE);
 
     let Ok(config_raw) = fs::read_to_string(config_file_path.clone()) else {
         fail!("Could not find configuration file at {CONFIG_ROOT}/{CONFIG_FILE}");
 
-        if confirm_prompt!(
-            "Would you like us to run {} {} to initialize it?",
-            "patchy".bright_blue(),
-            "init".bright_yellow(),
-        ) {
-            init(args)?;
+        // We don't want to have *any* sort of prompt when using the -y flag since that would be problematic in scripts
+        if !has_yes_flag
+            && confirm_prompt!(
+                "Would you like us to run {} {} to initialize it?",
+                "patchy".bright_blue(),
+                "init".bright_yellow(),
+            )
+        {
+            if let Err(err) = init(args) {
+                fail!("{err}");
+                std::process::exit(1);
+            };
+        } else if has_yes_flag {
+            eprintln!(
+                "You can create it with {} {}",
+                "patchy".bright_blue(),
+                "init".bright_yellow()
+            )
         }
 
         // We don't want to read the default configuration file as config_raw. Since it's empty there's no reason why the user would want to run it.
 
-        std::process::exit(1);
+        std::process::exit(0);
     };
 
     trace!("Using configuration file {config_file_path:?}");
@@ -217,10 +236,12 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
         &info.branch.local_branch_name,
     )?;
 
-    if confirm_prompt!(
-        "Overwrite branch {}? This is irreversible.",
-        config.local_branch.cyan()
-    ) {
+    if has_yes_flag
+        || confirm_prompt!(
+            "Overwrite branch {}? This is irreversible.",
+            config.local_branch.cyan()
+        )
+    {
         // forcefully renames the branch we are currently on into the branch specified by the user.
         // WARNING: this is a destructive action which erases the original branch
         GIT(&[
@@ -230,13 +251,18 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
+        info!(
+            "Overwrote branch {} since you supplied the {} flag",
+            config.local_branch.cyan(),
+            "--yes".bright_magenta()
+        );
         println!("\n{INDENT}{}", "  Success!\n".bright_green().bold());
     } else {
         let command = format!(
             "  git branch --move --force {temporary_branch} {}",
             config.local_branch
         );
-        let command = format!("\n{INDENT}{}\n", command.bright_magenta(),);
+        let command = format!("\n{INDENT}{}\n", command.bright_magenta());
         println!(
             "\n{INDENT}  You can still manually overwrite {} with the following command:\n  {command}",
             config.local_branch.cyan(),

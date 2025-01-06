@@ -89,7 +89,7 @@ macro_rules! trace {
 #[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {{
-        eprintln!("{INDENT}{}{}", "ⓘ ".bright_blue().bold(), format!($($arg)*))
+        eprintln!("{INDENT}{}{}", "i ".bright_blue().bold(), format!($($arg)*))
     }};
 }
 
