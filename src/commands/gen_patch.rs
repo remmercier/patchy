@@ -3,7 +3,7 @@ use std::fs;
 use crate::{
     commands::help,
     fail,
-    flags::{extract_value_from_flag, is_valid_flag, Flag},
+    flags::{is_valid_flag, Flag},
     git_commands::{is_valid_branch_name, GIT, GIT_ROOT},
     success,
     types::CommandArgs,
@@ -53,7 +53,8 @@ pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
 
         let next_arg = args.peek();
         let maybe_custom_patch_filename: Option<String> = next_arg.and_then(|next_arg| {
-            extract_value_from_flag(next_arg, &GEN_PATCH_NAME_FLAG)
+            GEN_PATCH_NAME_FLAG
+                .extract_from_arg(next_arg)
                 .filter(|branch_name| is_valid_branch_name(branch_name))
         });
 

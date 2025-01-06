@@ -6,7 +6,7 @@ use crate::{
         pr_fetch::{PR_FETCH_BRANCH_NAME_FLAG, PR_FETCH_CHECKOUT_FLAG, PR_FETCH_REPO_NAME_FLAG},
         run::RUN_YES_FLAG,
     },
-    flags::{format_flag, Flag},
+    flags::Flag,
     APP_NAME,
 };
 
@@ -58,9 +58,6 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
         "  {app_name} {version}
   {author}{less_than}{email}{greater_than}"
     );
-    let help_flag = format_flag(&HELP_FLAG);
-    let version_flag = format_flag(&VERSION_FLAG);
-
     match command {
         Some(cmd_name @ "init") => {
             let this_command_name = format!("{app_name} {}", cmd_name.bright_yellow());
@@ -78,7 +75,7 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
 
   Flags:
 
-    {help_flag}
+    {HELP_FLAG}
 ",
             );
         }
@@ -86,8 +83,6 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
             let this_command_name = format!("{app_name} {}", cmd_name.bright_yellow());
 
             let description = format_description("Create example config file");
-
-            let run_yes_flag = format_flag(&RUN_YES_FLAG);
 
             println!(
                 "
@@ -100,16 +95,14 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
 
   Flags:
 
-    {help_flag}
+    {HELP_FLAG}
 
-    {run_yes_flag}
+    {RUN_YES_FLAG}
 ",
             );
         }
         Some(cmd_name @ "gen-patch") => {
             let this_command_name = format!("{app_name} {}", cmd_name.bright_yellow());
-
-            let patch_filename_flag = format_flag(&GEN_PATCH_NAME_FLAG);
 
             let description = format_description("Generate a .patch file from commit hashes");
 
@@ -159,9 +152,9 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
 
   Flags:
 
-    {patch_filename_flag}
+    {GEN_PATCH_NAME_FLAG}
 
-    {help_flag}
+    {HELP_FLAG}
 ",
             );
         }
@@ -210,10 +203,6 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
                 "11745 10000@be8f264327f6ae729a0b372ef01f6fde49a78310 9191 600@5d10fa5beb917a0dbe0ef8441d14b3d0dd15227b".bright_green(),
                 format_description("Fetch several pull requests at a certain commit")
             );
-
-            let branch_name_flag = format_flag(&PR_FETCH_BRANCH_NAME_FLAG);
-            let checkout_flag = format_flag(&PR_FETCH_CHECKOUT_FLAG);
-            let repo_name_flag = format_flag(&PR_FETCH_REPO_NAME_FLAG);
             let this_command_name = format!("{app_name} {}", cmd_name.bright_yellow());
 
             println!(
@@ -239,13 +228,13 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
 
   Flags:
 
-    {branch_name_flag}
+    {PR_FETCH_BRANCH_NAME_FLAG}
 
-    {checkout_flag}
+    {PR_FETCH_CHECKOUT_FLAG}
 
-    {repo_name_flag}
+    {PR_FETCH_REPO_NAME_FLAG}
 
-    {help_flag}
+    {HELP_FLAG}
 ",
             );
         }
@@ -270,9 +259,9 @@ pub fn help(command: Option<&str>) -> anyhow::Result<()> {
 
   Flags:
 
-    {help_flag}
+    {HELP_FLAG}
 
-    {version_flag}
+    {VERSION_FLAG}
 "
             );
         }

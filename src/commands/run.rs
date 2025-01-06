@@ -8,7 +8,7 @@ use crate::{
     backup::{backup_files, restore_backup},
     commands::init,
     confirm_prompt, fail,
-    flags::{contains_flag, Flag, IS_VERBOSE},
+    flags::{Flag, IS_VERBOSE},
     git_commands::{
         add_remote_branch, checkout_from_remote, clean_up_remote, fetch_pull_request,
         merge_pull_request, GIT, GIT_ROOT,
@@ -48,7 +48,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
     println!();
 
     let config_path = GIT_ROOT.join(CONFIG_ROOT);
-    let has_yes_flag = contains_flag(args, &RUN_YES_FLAG);
+    let has_yes_flag = RUN_YES_FLAG.is_in_args(args);
 
     let config_file_path = config_path.join(CONFIG_FILE);
 

@@ -1,6 +1,6 @@
 use crate::commands::help;
 use crate::fail;
-use crate::flags::{extract_value_from_flag, is_valid_flag, Flag};
+use crate::flags::{is_valid_flag, Flag};
 use crate::git_commands::{
     fetch_pull_request, is_valid_branch_name, GIT, GITHUB_REMOTE_PREFIX, GITHUB_REMOTE_SUFFIX,
 };
@@ -62,7 +62,7 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
             continue;
         };
 
-        if let Some(flag) = extract_value_from_flag(arg, &PR_FETCH_REPO_NAME_FLAG) {
+        if let Some(flag) = PR_FETCH_REPO_NAME_FLAG.extract_from_arg(arg) {
             remote_name = Some(flag);
             continue;
         }
@@ -90,7 +90,8 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
 
         let next_arg = args.peek();
         let maybe_custom_branch_name: Option<String> = next_arg.and_then(|next_arg| {
-            extract_value_from_flag(next_arg, &PR_FETCH_BRANCH_NAME_FLAG)
+            PR_FETCH_BRANCH_NAME_FLAG
+                .extract_from_arg(next_arg)
                 .filter(|branch_name| is_valid_branch_name(branch_name))
         });
 

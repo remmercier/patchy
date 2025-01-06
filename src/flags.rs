@@ -1,7 +1,6 @@
-use std::env;
+use std::{env, fmt::Display};
 
 use colored::Colorize;
-use indexmap::IndexSet;
 use once_cell::sync::Lazy;
 
 use crate::{commands::help::format_description, types::CommandArgs};
@@ -17,34 +16,50 @@ pub struct Flag<'a> {
 /// # Examples
 ///
 /// ```rust
-/// use patchy::flags::{extract_value_from_flag, Flag};
+/// use patchy::flags::Flag;
 ///
 /// let my_flag = Flag {
 ///     short: "-r=",
 ///     long: "--remote-name=",
-///     description: "some flag", 
+///     description: "some flag",
 /// };
 ///
-/// let long_version = extract_value_from_flag("--remote-name=abc", &my_flag);
-/// let short_version = extract_value_from_flag("-r=abcdefg", &my_flag);
-/// let invalid = extract_value_from_flag("-m=abcdefg", &my_flag);
+/// let long_version = my_flag.extract_from_arg("--remote-name=abc");
+/// let short_version = my_flag.extract_from_arg("-r=abcdefg");
+/// let invalid = my_flag.extract_from_arg("-m=abcdefg");
 ///
 /// assert_eq!(long_version, Some("abc".into()));
 /// assert_eq!(short_version, Some("abcdefg".into()));
 /// assert_eq!(invalid, None);
 /// ```
-pub fn extract_value_from_flag(arg: &str, flag: &Flag) -> Option<String> {
-    if arg.starts_with(flag.short) {
-        arg.get(flag.short.len()..).map(|value| value.into())
-    } else if arg.starts_with(flag.long) {
-        arg.get(flag.long.len()..).map(|value| value.into())
-    } else {
-        None
+impl Flag<'_> {
+    pub fn is_in_args(&self, args: &CommandArgs) -> bool {
+        args.contains(self.short) || args.contains(self.long)
+    }
+
+    pub fn extract_from_arg(&self, arg: &str) -> Option<String> {
+        if arg.starts_with(self.short) {
+            arg.get(self.short.len()..).map(|value| value.into())
+        } else if arg.starts_with(self.long) {
+            arg.get(self.long.len()..).map(|value| value.into())
+        } else {
+            None
+        }
     }
 }
 
-pub fn contains_flag(args: &IndexSet<String>, flag: &Flag) -> bool {
-    args.contains(flag.short) || args.contains(flag.long)
+impl Display for Flag<'_> {
+    /// Formats a flag into a colored format with a description, printable to the terminal
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{}{}\n    {}",
+            self.short.bright_magenta(),
+            ", ".bright_black(),
+            self.long.bright_magenta(),
+            format_description(self.description)
+        )
+    }
 }
 
 /// Checks whether an input argument is a valid flag
@@ -54,17 +69,6 @@ pub fn is_valid_flag(arg: &str, available_flags: &[&Flag]) -> bool {
         .iter()
         .flat_map(|flag| [flag.short, flag.long])
         .any(|flag| arg.starts_with(flag))
-}
-
-/// Formats a flag into a colored format with a description, printable to the terminal
-pub fn format_flag(flag: &Flag) -> String {
-    format!(
-        "{}{}{}\n    {}",
-        flag.short.bright_magenta(),
-        ", ".bright_black(),
-        flag.long.bright_magenta(),
-        format_description(flag.description)
-    )
 }
 
 pub static IS_VERBOSE: Lazy<bool> = Lazy::new(|| {
