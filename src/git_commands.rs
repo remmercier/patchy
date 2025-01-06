@@ -14,7 +14,6 @@ use crate::{
     trace,
     types::{Branch, BranchAndRemote, GitHubResponse, Remote},
     utils::{make_request, normalize_commit_msg, with_uuid},
-    APP_NAME,
 };
 
 pub fn is_valid_branch_name(branch_name: &str) -> bool {
