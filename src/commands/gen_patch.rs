@@ -24,6 +24,10 @@ pub static GEN_PATCH_FLAGS: &[&Flag<'static>; 3] =
     &[&GEN_PATCH_NAME_FLAG, &HELP_FLAG, &VERSION_FLAG];
 
 pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
+    if args.is_empty() {
+        fail!("You haven't specified any commit hashes");
+        help(Some("gen-patch"))?;
+    }
     let mut args = args.iter().peekable();
     let mut commit_hashes_with_maybe_custom_patch_filenames = vec![];
 

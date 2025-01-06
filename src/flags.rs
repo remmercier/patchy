@@ -71,6 +71,7 @@ pub fn is_valid_flag(arg: &str, available_flags: &[&Flag]) -> bool {
         .any(|flag| arg.starts_with(flag))
 }
 
+/// Makes the program output more detailed information
 pub static IS_VERBOSE: Lazy<bool> = Lazy::new(|| {
     let args: CommandArgs = env::args().collect();
     args.contains("--verbose")
