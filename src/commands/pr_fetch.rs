@@ -14,6 +14,17 @@ use colored::Colorize;
 use super::help::{HELP_FLAG, VERSION_FLAG};
 use super::run::parse_if_maybe_hash;
 
+/// Allow users to prefix their PRs with octothorpe, e.g. #12345 instead of 12345.
+/// This is just a QOL addition since some people may use it due to habit
+pub fn ignore_octothorpe(arg: &str) -> String {
+    if arg.starts_with("#") {
+        arg.get(1..).unwrap_or_default()
+    } else {
+        arg
+    }
+    .into()
+}
+
 pub static PR_FETCH_BRANCH_NAME_FLAG: Flag<'static> = Flag {
     short: "-b=",
     long: "--branch-name=",
@@ -78,7 +89,9 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
             continue;
         }
 
-        let (pull_request, hash) = parse_if_maybe_hash(arg, "@");
+        let arg = ignore_octothorpe(arg);
+
+        let (pull_request, hash) = parse_if_maybe_hash(&arg, "@");
 
         if !pull_request.chars().all(|ch| ch.is_numeric()) {
             fail!(

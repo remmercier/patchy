@@ -6,7 +6,7 @@ use dialoguer::Confirm;
 
 use crate::{
     backup::{backup_files, restore_backup},
-    commands::init,
+    commands::{init, pr_fetch::ignore_octothorpe},
     confirm_prompt, fail,
     flags::{Flag, IS_VERBOSE},
     git_commands::{
@@ -127,12 +127,19 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
     let client = reqwest::Client::new();
 
     if config.pull_requests.is_empty() {
-        info!("You haven't specified any pull requests to fetch in your config.")
+        info!(
+            "You haven't specified any pull requests to fetch in your config, {}",
+            display_link(
+                "see the instructions on how to configure patchy.",
+                "https://github.com/NikitaRevenco/patchy?tab=readme-ov-file#config"
+            )
+        )
     } else {
         // TODO: make this concurrent, see https://users.rust-lang.org/t/processing-subprocesses-concurrently/79638/3
         // Git cannot handle multiple threads executing commands in the same repository, so we can't use threads, but we can run processes in the background
         for pull_request in config.pull_requests.iter() {
-            let (pull_request, commit_hash) = parse_if_maybe_hash(pull_request, " @ ");
+            let pull_request = ignore_octothorpe(pull_request);
+            let (pull_request, commit_hash) = parse_if_maybe_hash(&pull_request, " @ ");
             // TODO: refactor this to not use such deep nesting
             match fetch_pull_request(&config.repo, &pull_request, &client, None, &commit_hash).await
             {
@@ -167,7 +174,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
                     };
                 }
                 Err(err) => {
-                    fail!("Could not fetch branch from remote\n\n{err:#?}");
+                    fail!("Could not fetch branch from remote\n{err}");
                     continue;
                 }
             }
@@ -252,11 +259,13 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
             &temporary_branch,
             &config.local_branch,
         ])?;
-        info!(
-            "Overwrote branch {} since you supplied the {} flag",
-            config.local_branch.cyan(),
-            "--yes".bright_magenta()
-        );
+        if has_yes_flag {
+            info!(
+                "Overwrote branch {} since you supplied the {} flag",
+                config.local_branch.cyan(),
+                "--yes".bright_magenta()
+            );
+        }
         println!("\n{INDENT}{}", "  Success!\n".bright_green().bold());
     } else {
         let command = format!(
