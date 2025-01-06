@@ -5,7 +5,7 @@ use std::{
     process::Output,
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
 use reqwest::Client;
 
@@ -244,6 +244,46 @@ Check it out here: https://github.com/NikitaRevenco/patchy",
     Ok(())
 }
 
+enum AvailableBranch {
+    /// In this case, we can just use the original `branch` that we passed in
+    First,
+    /// The first branch was available, so we slapped on some arbitrary identifier at the end
+    /// Represents a branch like some-branch-2, some-branch-3
+    Other(String),
+}
+
+/// Given a branch, either return this branch or the first available branch with an identifier at the end (a `-#`) where `#` represents a number
+/// So we can keep on "trying" for a branch that isn't used. We might try `some-branch`, and if it already exists we will then try:
+///
+/// - some-branch-2
+/// - some-branch-3
+/// - some-branch-4
+/// - ...
+///
+/// Stopping when we find the first available
+///
+/// We do not want to return a branch if it already exists, since we don't want to overwrite any branch potentially losing the user their work
+///
+/// We also don't want to ask for a prompt for a custom name, as it would be pretty annoying to specify a name for each branch if you have like 30 pull requests you want to merge
+fn first_available_branch(branch: &str) -> AvailableBranch {
+    let branch_exists = GIT(&["rev-parse", "--verify", branch]).is_err();
+    if branch_exists {
+        AvailableBranch::First
+    } else {
+        // the first number for which the branch does not exist
+        let number = (2..)
+            .find(|current| {
+                let branch_with_num = format!("{}-{branch}", current);
+                GIT(&["rev-parse", "--verify", &branch_with_num]).is_err()
+            })
+            .expect("There will eventually be a #-branch which is available.");
+
+        let branch_name = format!("{number}-{branch}");
+
+        AvailableBranch::Other(branch_name)
+    }
+}
+
 pub async fn fetch_pull_request(
     repo: &str,
     pull_request: &str,
@@ -265,13 +305,14 @@ pub async fn fetch_pull_request(
     let info = BranchAndRemote {
         branch: Branch {
             upstream_branch_name: response.head.r#ref.clone(),
-            local_branch_name: custom_branch_name
-                .map(|s| s.into())
-                .unwrap_or(with_uuid(&format!(
-                    "{title}-{}",
-                    pull_request,
-                    title = normalize_commit_msg(&response.title)
-                ))),
+            local_branch_name: custom_branch_name.map(|s| s.into()).unwrap_or({
+                let branch_name = &format!("{pull_request}/{}", &response.head.r#ref);
+
+                match first_available_branch(branch_name) {
+                    AvailableBranch::First => branch_name.to_string(),
+                    AvailableBranch::Other(branch) => branch,
+                }
+            }),
         },
         remote: Remote {
             repository_url: response.head.repo.clone_url.clone(),
@@ -283,9 +324,11 @@ pub async fn fetch_pull_request(
         },
     };
 
-    add_remote_branch(&info, commit_hash).context(format!(
-        "Could not add remote branch for pull request #{pull_request}, skipping."
-    ))?;
+    if let Err(err) = add_remote_branch(&info, commit_hash) {
+        return Err(anyhow!(
+            "Could not add remote branch for pull request #{pull_request}, skipping.\n{err}"
+        ));
+    };
 
     Ok((response, info))
 }
