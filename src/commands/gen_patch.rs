@@ -1,7 +1,4 @@
-use std::{
-    fs::{self, File},
-    io::Write,
-};
+use std::fs;
 
 use crate::{
     commands::help,
@@ -78,15 +75,6 @@ pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
     for (patch_commit_hash, maybe_custom_patch_name) in
         commit_hashes_with_maybe_custom_patch_filenames
     {
-        let Ok(patch_contents) = GIT(&[
-            "diff",
-            &format!("{}^", patch_commit_hash),
-            patch_commit_hash,
-        ]) else {
-            fail!("Could not get patch output for patch {}", patch_commit_hash);
-            continue;
-        };
-
         // 1. if the user provides a custom filename for the patch file, use that
         // 2. otherwise use the commit message
         // 3. if all fails use the commit hash
@@ -100,9 +88,25 @@ pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
 
         let patch_file_path = config_path.join(&patch_filename);
 
-        let mut file = File::create(&patch_file_path)?;
+        // Paths are UTF-8 encoded. If we cannot convert to UTF-8 that means it is not a valid path
+        let Some(patch_file_path_str) = patch_file_path.as_os_str().to_str() else {
+            fail!("Not a valid path: {patch_file_path:?}");
+            continue;
+        };
 
-        file.write_all(patch_contents.as_bytes())?;
+        if let Err(err) = GIT(&[
+            "format-patch",
+            "-1",
+            patch_commit_hash,
+            "--output",
+            patch_file_path_str,
+        ]) {
+            fail!(
+                "Could not get patch output for patch {}\n{err}",
+                patch_commit_hash
+            );
+            continue;
+        };
 
         success!(
             "Created patch file at {}",
