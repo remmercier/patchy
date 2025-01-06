@@ -150,8 +150,9 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
                                 "Merged pull request {}",
                                 display_link(
                                     &format!(
-                                        "{}{} {}",
+                                        "{}{}{}{}",
                                         "#".bright_blue(),
+                                        " ".bright_blue(),
                                         pull_request.bright_blue(),
                                         &response.title.bright_blue().italic()
                                     ),

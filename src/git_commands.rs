@@ -205,8 +205,9 @@ pub async fn merge_pull_request(
     ) {
         let pr = display_link(
             &format!(
-                "{}{} {}",
+                "{}{}{}{}",
                 "#".bright_blue(),
+                " ".bright_blue(),
                 pull_request.bright_blue(),
                 pr_title.bright_blue().italic()
             ),

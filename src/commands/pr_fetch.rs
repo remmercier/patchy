@@ -142,8 +142,9 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
                     "Fetched pull request {} available at branch {}{}",
                     display_link(
                         &format!(
-                            "{}{} {}",
+                            "{}{}{}{}",
                             "#".bright_blue(),
+                            " ".bright_blue(),
                             pull_request.bright_blue(),
                             response.title.bright_blue().italic()
                         ),
