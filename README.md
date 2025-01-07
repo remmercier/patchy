@@ -13,6 +13,7 @@
   - [Cargo](#cargo)
   - [PowerShell](#powershell)
   - [Nix](#nix)
+- [Merge conflicts](#merge-conflicts)
 
 ## Why should I use it?
 
