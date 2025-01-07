@@ -218,9 +218,3 @@ Say you merge 10 pull requests, 3 of which couldn't be merged due to merge confl
 You will need to merge it yourself. Skipping this PR. Error message from git:
 Unresolved conflict in helix-term/src/commands/typed.rs
 ```
-
-I recommend enabling this git option which remembers how you solved merge conflicts:
-
-```sh
-git config --global rerere.enabled true
-```
