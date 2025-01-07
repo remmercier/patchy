@@ -212,6 +212,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
                         GIT_ROOT.join(CONFIG_ROOT).to_str().unwrap_or_default()
                     ),
                 ]) {
+                    GIT(&["am", "--abort"])?;
                     return Err(anyhow!(
                         "Could not apply patch {file_name}, skipping\n{err}"
                     ));
