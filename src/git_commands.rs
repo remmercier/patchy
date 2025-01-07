@@ -212,9 +212,18 @@ pub async fn merge_pull_request(
             pr_url,
         );
 
+        let support_url = display_link(
+            "Merge conflicts (github)",
+            "https://github.com/NikitaRevenco/patchy?tab=readme-ov-file#merge-conflicts",
+        );
+
         return Err(anyhow!(
-            "Could not merge branch {} into the current branch for pull request {pr} since the merge is non-trivial.\nYou will need to merge it yourself. Skipping this PR. Error \
+            "Could not merge branch {} into the current branch for pull request {pr} \
+            since the merge is non-trivial.\nYou will need to merge it yourself:\n  {} \
+            {1}\nNote: To learn how to merge only once and re-use for subsequent \
+            invocations of patchy, see {support_url}\nSkipping this PR. Error \
              message from git:\n{err}",
+            "git merge --squash".bright_blue(),
             &info.branch.local_branch_name.bright_cyan()
         ));
     }
