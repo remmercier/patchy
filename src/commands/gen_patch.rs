@@ -1,5 +1,6 @@
 use std::fs;
 
+use crate::CONFIG_ROOT;
 use crate::{
     commands::help,
     fail,
@@ -9,8 +10,6 @@ use crate::{
     types::CommandArgs,
     utils::normalize_commit_msg,
 };
-use crate::{CONFIG_ROOT, INDENT};
-use colored::Colorize;
 
 use super::help::{HELP_FLAG, VERSION_FLAG};
 

@@ -2,13 +2,12 @@ use std::fs;
 
 use anyhow::{anyhow, Context};
 use colored::Colorize;
-use dialoguer::Confirm;
 
 use crate::{
     backup::{backup_files, restore_backup},
     commands::{init, pr_fetch::ignore_octothorpe},
     confirm_prompt, fail,
-    flags::{Flag, IS_VERBOSE},
+    flags::Flag,
     git_commands::{
         add_remote_branch, checkout_from_remote, clean_up_remote, fetch_pull_request,
         merge_pull_request, GIT, GIT_ROOT,

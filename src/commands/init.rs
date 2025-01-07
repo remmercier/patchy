@@ -4,7 +4,6 @@ use std::{
 };
 
 use colored::Colorize;
-use dialoguer::Confirm;
 
 use crate::{
     confirm_prompt, git_commands::GIT_ROOT, success, types::CommandArgs, CONFIG_FILE, CONFIG_ROOT,

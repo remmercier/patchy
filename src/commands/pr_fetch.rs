@@ -7,7 +7,6 @@ use crate::git_commands::{
 use crate::success;
 use crate::types::CommandArgs;
 use crate::utils::display_link;
-use crate::INDENT;
 use anyhow::anyhow;
 use colored::Colorize;
 

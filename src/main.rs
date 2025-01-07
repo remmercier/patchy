@@ -5,7 +5,6 @@ use patchy::fail;
 use std::env;
 
 use patchy::types::CommandArgs;
-use patchy::INDENT;
 
 use anyhow::Result;
 

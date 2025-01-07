@@ -56,7 +56,8 @@ pub async fn make_request(client: &Client, url: &str) -> anyhow::Result<GitHubRe
             let text = res.text().await?;
 
             Err(anyhow!(
-                "Request failed with status: {status}\nRequested URL: {url}\nResponse: {text}",
+                "Request failed with status: \
+                {status}\nRequested URL: {url}\nResponse: {text}",
             ))
         }
         Err(err) => Err(anyhow!("Error sending request: {err}")),
@@ -66,14 +67,20 @@ pub async fn make_request(client: &Client, url: &str) -> anyhow::Result<GitHubRe
 #[macro_export]
 macro_rules! success {
     ($($arg:tt)*) => {{
-        println!("{INDENT}{}{}", "✓ ".bright_green().bold(), format!($($arg)*))
+        println!("{}{}{}",
+            $crate::INDENT,
+            colored::Colorize::bold(colored::Colorize::bright_green("✓ ")),
+            format!($($arg)*))
     }};
 }
 
 #[macro_export]
 macro_rules! fail {
     ($($arg:tt)*) => {{
-        eprintln!("{INDENT}{}{}", "✗ ".bright_red().bold(), format!($($arg)*))
+        eprintln!("{}{}{}",
+            $crate::INDENT,
+            colored::Colorize::bold(colored::Colorize::bright_red("✗ ")),
+            format!($($arg)*))
     }};
 }
 
@@ -81,7 +88,10 @@ macro_rules! fail {
 macro_rules! trace {
     ($($arg:tt)*) => {{
         if *$crate::flags::IS_VERBOSE {
-            eprintln!("{INDENT}{}{}", "--verbose: ".bright_yellow().bold(), format!($($arg)*))
+            eprintln!("{}{}{}",
+                $crate::INDENT,
+                colored::Colorize::bold(colored::Colorize::bright_yellow("--verbose: ")),
+                format!($($arg)*))
         }
     }};
 }
@@ -89,7 +99,10 @@ macro_rules! trace {
 #[macro_export]
 macro_rules! info {
     ($($arg:tt)*) => {{
-        eprintln!("{INDENT}{}{}", "i ".bright_blue().bold(), format!($($arg)*))
+        eprintln!("{}{}{}",
+            $crate::INDENT,
+            colored::Colorize::bright_blue(colored::Colorize::bold("i ")),
+            format!($($arg)*))
     }};
 }
 
@@ -97,7 +110,7 @@ macro_rules! info {
 #[macro_export]
 macro_rules! confirm_prompt {
     ($($arg:tt)*) => {{
-        Confirm::new()
+        dialoguer::Confirm::new()
             .with_prompt(format!(
                 "\n{INDENT}{} {}",
                 "»".bright_black(),

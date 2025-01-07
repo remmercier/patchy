@@ -1,4 +1,4 @@
-use crate::{utils::display_link, INDENT};
+use crate::utils::display_link;
 use colored::Colorize;
 use std::{
     path::{Path, PathBuf},
@@ -10,7 +10,6 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 
 use crate::{
-    flags::IS_VERBOSE,
     trace,
     types::{Branch, BranchAndRemote, GitHubResponse, Remote},
     utils::{make_request, normalize_commit_msg, with_uuid},
