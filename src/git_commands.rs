@@ -215,7 +215,8 @@ pub async fn merge_pull_request(
         let support_url = display_link(
             "Merge conflicts (github)",
             "https://github.com/NikitaRevenco/patchy?tab=readme-ov-file#merge-conflicts",
-        );
+        )
+        .bright_blue();
 
         return Err(anyhow!(
             "Could not merge branch {} into the current branch for pull request {pr} \
