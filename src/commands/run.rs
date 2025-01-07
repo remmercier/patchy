@@ -203,7 +203,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
                 .unwrap_or_default();
 
             if patches.contains(file_name) {
-                GIT(&[
+                if let Err(err) = GIT(&[
                     "am",
                     "--keep-cr",
                     "--signoff",
@@ -211,8 +211,11 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
                         "{}/{file_name}.patch",
                         GIT_ROOT.join(CONFIG_ROOT).to_str().unwrap_or_default()
                     ),
-                ])
-                .context(format!("Could not apply patch {file_name}, skipping"))?;
+                ]) {
+                    return Err(anyhow!(
+                        "Could not apply patch {file_name}, skipping\n{err}"
+                    ));
+                };
 
                 let last_commit_message = GIT(&["log", "-1", "--format=%B"])?;
                 success!(
