@@ -1,3 +1,7 @@
+# Patchy v1.2.1
+
+- Fixes `patchy pr-fetch` not working on pull requests merged by patchy
+
 # Patchy v1.2.0
 
 - Use `redirect.github.com` instead of `github.com` not to spam PRs
