@@ -218,3 +218,46 @@ Say you merge 10 pull requests, 3 of which couldn't be merged due to merge confl
 You will need to merge it yourself. Skipping this PR. Error message from git:
 Unresolved conflict in helix-term/src/commands/typed.rs
 ```
+
+<details>
+
+<summary>
+
+Fixing merge conflicts and retaining the fixes, declaratively
+
+</summary>
+
+Okay, now merge the branch:
+
+```sh
+git merge 11164/command-expansion
+```
+
+This creates the following commit:
+
+```
+2fb6c3c7 (HEAD -> patchy) Merge branch '11164/command-expansion' into patchy
+```
+
+Now that you have this commit, let's generate a `.patch` file for it:
+
+```
+> patchy gen-patch 2fb6c3c7 --patch-filename=merge-11164
+  ✓ Created patch file at .patchy/merge-11164.patch
+```
+
+Now, you can go ahead and add the patch to your config:
+
+```diff
+- pull-requests = [ "1234", "1111", "11164" ]
++ pull-requests = [ "1234", "1111" ]
+
+- patches = [ ]
++ patches = [ "merge-11164" ]
+```
+
+When you do this, you won't need to solve this merge conflict anymore as the `merge-11164` patch includes both the entire pull request as well as how it was merged.
+
+Note that if you change the _order_ of your pull requests in `pull-requests` you may see merge conflicts again. It is recommended to keep the order the same once you fix the conflicts.
+
+</details>
