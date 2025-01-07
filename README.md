@@ -178,7 +178,11 @@ powershell -ExecutionPolicy ByPass -c "irm https://github.com/NikitaRevenco/patc
 nix profile install github:NikitaRevenco/patchy/main
 ```
 
-## Example usage with NixOS
+<details>
+
+<summary>
+Example usage with flakes
+</summary>
 
 If the software you are using has a `flake.nix` which automatically builds this software, then using patchy with it is straightforward.
 
@@ -199,3 +203,23 @@ If the software you are using has a `flake.nix` which automatically builds this 
    ```
 
 This is easier when the target repository has a `flake.nix` which fully builds the software. Which, the [`helix-editor/helix`](https://github.com/helix-editor/helix) does have for example.
+
+</details>
+
+## Merge conflicts
+
+If you merge a lot of PRs, it's likely some of them will clash with eachother and there will be conflicts.
+
+Say you merge 10 pull requests, 3 of which couldn't be merged due to merge conflicts. The other 7 will be merged, while branches for those 3 will exist and you will be able to merge them yourself.
+
+```
+  ✗ Could not merge branch 11164/command-expansion into the current branch for pull request #11164 Command expansion v2 since the merge is non-trivial.
+You will need to merge it yourself. Skipping this PR. Error message from git:
+Unresolved conflict in helix-term/src/commands/typed.rs
+```
+
+I recommend enabling this git option which remembers how you solved merge conflicts:
+
+```sh
+git config --global rerere.enabled true
+```
