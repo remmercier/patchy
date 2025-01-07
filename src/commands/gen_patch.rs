@@ -55,6 +55,7 @@ pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
             continue;
         }
 
+        // Only merge commits can have 2 or more parents
         let is_merge_commit = GIT(&["rev-parse", &format!("{}^2", arg)]).is_ok();
 
         if is_merge_commit {
