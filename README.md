@@ -215,8 +215,9 @@ Say you merge 10 pull requests, 3 of which couldn't be merged due to merge confl
 
 ```
   ✗ Could not merge branch 11164/command-expansion into the current branch for pull request #11164 Command expansion v2 since the merge is non-trivial.
-You will need to merge it yourself. Skipping this PR. Error message from git:
-Unresolved conflict in helix-term/src/commands/typed.rs
+You will need to merge it yourself:
+  git merge --squash 11164/command-expansion
+Note: To learn how to merge only once and re-use for subsequent invocations of patchy, see Merge conflicts (github)
 ```
 
 <details>
