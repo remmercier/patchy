@@ -55,6 +55,17 @@ pub fn gen_patch(args: &CommandArgs) -> anyhow::Result<()> {
             continue;
         }
 
+        let is_merge_commit = GIT(&["rev-parse", &format!("{}^2", arg)]).is_ok();
+
+        if is_merge_commit {
+            fail!(
+                "Commit {} is a merge commit, which cannot be turned into a .patch file",
+                arg
+            );
+
+            continue;
+        }
+
         let next_arg = args.peek();
         let maybe_custom_patch_filename: Option<String> = next_arg.and_then(|next_arg| {
             GEN_PATCH_NAME_FLAG
