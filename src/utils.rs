@@ -80,7 +80,7 @@ macro_rules! fail {
 #[macro_export]
 macro_rules! trace {
     ($($arg:tt)*) => {{
-        if *IS_VERBOSE {
+        if *$crate::flags::IS_VERBOSE {
             eprintln!("{INDENT}{}{}", "--verbose: ".bright_yellow().bold(), format!($($arg)*))
         }
     }};

@@ -230,7 +230,17 @@ Fixing merge conflicts and retaining the fixes, declaratively
 Okay, now merge the branch:
 
 ```sh
-git merge 11164/command-expansion
+git merge --squash 11164/command-expansion
+```
+
+We need `--squash` since `patchy gen-patch` does not work on Merge commits. But using `--squash` makes it into a non-merge commit.
+
+Now fix the merge conflicts.
+
+Then, commit your changes:
+
+```
+git commit -m "merge branch 11164/command-expansion"
 ```
 
 This creates the following commit:

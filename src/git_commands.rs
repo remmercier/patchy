@@ -72,6 +72,7 @@ type Git = Lazy<Box<dyn Fn(&[&str]) -> Result<String> + Send + Sync>>;
 
 pub static GIT: Git = Lazy::new(|| {
     Box::new(move |args: &[&str]| -> Result<String> {
+        trace!("$ git {}", args.join(" "));
         get_git_output(spawn_git(args, &GIT_ROOT)?, args)
     })
 });
@@ -172,22 +173,21 @@ pub fn merge_into_main(
     local_branch: &str,
     remote_branch: &str,
 ) -> anyhow::Result<String, anyhow::Error> {
-    match GIT(&["merge", local_branch, "--no-commit", "--no-ff"]) {
-        Ok(_) => Ok(format!("Merged {remote_branch} successfully")),
+    trace!("Merging branch {local_branch}");
+    match GIT(&["merge", "--squash", local_branch]) {
+        Ok(_) => {
+            // --squash will NOT commit anything. So we need to make it manually
+            GIT(&[
+                "commit",
+                "--message",
+                &format!("patchy: Merge {local_branch}",),
+            ])?;
+            Ok(format!("Merged {remote_branch} successfully"))
+        }
         Err(err) => {
-            let files_with_conflicts = GIT(&["diff", "--name-only", "--diff-filter=U"])?;
-            for file_with_conflict in files_with_conflicts.lines() {
-                // We can likely not worry about markdown files having merge conflicts as those are usually for documentation, and don't affect the software in general if merged incorrectly
-                if file_with_conflict.ends_with(".md") {
-                    GIT(&["checkout", "--ours", file_with_conflict])?;
-                    GIT(&["add", file_with_conflict])?;
-                } else {
-                    GIT(&["merge", "--abort"])?;
-                    // But if there's at least 1 file we can't merge, we abort the entire attempt
-                    return Err(err);
-                }
-            }
-            Ok("Merged {remote_branch} successfully".into())
+            // nukes the worktree
+            GIT(&["reset", "--hard"])?;
+            Err(anyhow!("Could not merge {remote_branch}\n{err}"))
         }
     }
 }
