@@ -1,3 +1,7 @@
+# Patchy v1.2.2
+
+- No changes, release only to re-build artifacts since I changed my username so the old release links no longer work
+
 # Patchy v1.2.1
 
 - Fixes `patchy pr-fetch` not working on pull requests merged by patchy
