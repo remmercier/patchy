@@ -40,7 +40,7 @@ pub static VERSION_FLAG: Flag<'static> = Flag {
 pub fn help(command: Option<&str>) -> anyhow::Result<()> {
     let author = "Nikita Revenco ".italic();
     let less_than = "<".bright_black().italic();
-    let email = "pm@nikitarevenco.com".italic();
+    let email = "pm@nikrev.com".italic();
     let greater_than = ">".bright_black().italic();
     let app_name = APP_NAME.bright_blue();
     let flags_label = "[<flags>]".bright_magenta();

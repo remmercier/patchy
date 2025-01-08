@@ -5,8 +5,8 @@ edition = "2021"
 license = "MIT"
 authors = ["Nikita Revenco"]
 description = "A tool which makes it easy to declaratively manage personal forks by automatically merging pull requests"
-repository = "https://github.com/NikitaRevenco/patchy"
-homepage = "https://github.com/NikitaRevenco/patchy"
+repository = "https://github.com/nik-rev/patchy"
+homepage = "https://github.com/nik-rev/patchy"
 
 [[bin]]
 name = "patchy"

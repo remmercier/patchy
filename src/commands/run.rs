@@ -93,7 +93,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
   - "helix-editor/helix"
   - "microsoft/vscode"
 
-  For more information see this guide: https://github.com/NikitaRevenco/patchy/blob/main/README.md""#
+  For more information see this guide: https://github.com/nik-rev/patchy/blob/main/README.md""#
         ));
     }
 
@@ -130,7 +130,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
             "You haven't specified any pull requests to fetch in your config, {}",
             display_link(
                 "see the instructions on how to configure patchy.",
-                "https://github.com/NikitaRevenco/patchy?tab=readme-ov-file#config"
+                "https://github.com/nik-rev/patchy?tab=readme-ov-file#config"
             )
         )
     } else {

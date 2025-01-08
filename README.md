@@ -148,7 +148,7 @@ Install the binary directly into your system, available for macOS and Linux.
 Recommended for Linux users.
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/NikitaRevenco/patchy/releases/latest/download/patchy-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/nik-rev/patchy/releases/latest/download/patchy-installer.sh | sh
 ```
 
 ### Homebrew
@@ -156,7 +156,7 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/NikitaRevenco/patchy/re
 Recommended for macOS users.
 
 ```bash
-brew install NikitaRevenco/tap/patchy-bin
+brew install nik-rev/tap/patchy-bin
 ```
 
 ### Cargo
@@ -170,13 +170,13 @@ cargo install patchy-bin
 Recommended for Windows users.
 
 ```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://github.com/NikitaRevenco/patchy/releases/latest/download/patchy-installer.ps1 | iex"
+powershell -ExecutionPolicy ByPass -c "irm https://github.com/nik-rev/patchy/releases/latest/download/patchy-installer.ps1 | iex"
 ```
 
 ### Nix
 
 ```bash
-nix profile install github:NikitaRevenco/patchy/main
+nix profile install github:nik-rev/patchy/main
 ```
 
 <details>

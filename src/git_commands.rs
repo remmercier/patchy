@@ -214,7 +214,7 @@ pub async fn merge_pull_request(
 
         let support_url = display_link(
             "Merge conflicts (github)",
-            "https://github.com/NikitaRevenco/patchy?tab=readme-ov-file#merge-conflicts",
+            "https://github.com/nik-rev/patchy?tab=readme-ov-file#merge-conflicts",
         )
         .bright_blue();
 
