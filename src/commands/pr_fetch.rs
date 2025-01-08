@@ -63,8 +63,6 @@ pub async fn pr_fetch(args: &CommandArgs) -> anyhow::Result<()> {
 
     let mut no_more_flags = false;
 
-    // TODO: refactor arg iterating logic into a separate function
-    // This is duplicated in gen_patch
     while let Some(arg) = args.next() {
         // After "--", each argument is interpreted literally. This way, we can e.g. use filenames that are named exactly the same as flags
         if arg == "--" {
