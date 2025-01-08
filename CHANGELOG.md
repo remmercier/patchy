@@ -1,6 +1,6 @@
-# Patchy v1.2.2
+# Patchy v1.2.2 - v1.2.5
 
-- No changes, release only to re-build artifacts since I changed my username so the old release links no longer work
+- Fixes download links as github username of author changed
 
 # Patchy v1.2.1
 
