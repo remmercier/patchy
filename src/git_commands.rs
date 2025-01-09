@@ -31,14 +31,6 @@ pub fn spawn_git(args: &[&str], git_dir: &Path) -> Result<Output, std::io::Error
         .output()
 }
 
-/// Removes a remote it's branch
-pub fn clean_up_remote(remote: &str, branch: &str) -> anyhow::Result<()> {
-    // It's okay to do this if the script created the branch or if the user gave explicit permission
-    GIT(&["branch", "--delete", "--force", branch])?;
-    GIT(&["remote", "remove", remote])?;
-    Ok(())
-}
-
 pub fn get_git_output(output: Output, args: &[&str]) -> anyhow::Result<String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout)
@@ -90,6 +82,7 @@ pub fn add_remote_branch(
         GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
         return Err(anyhow!("Could not fetch remote: {err}"));
     }
+
     trace!(
         "Added remote {} for repository {}",
         &info.remote.repository_url,
@@ -141,27 +134,31 @@ pub fn add_remote_branch(
     Ok(())
 }
 
+/// Removes a remote and its branch
+pub fn clean_up_remote(remote: &str, branch: &str) -> anyhow::Result<()> {
+    // NOTE: Caller needs to ensure this function only runs if the script created the branch or if the user gave explicit permission
+    GIT(&["branch", "--delete", "--force", branch])?;
+    GIT(&["remote", "remove", remote])?;
+    Ok(())
+}
+
 pub fn checkout_from_remote(branch: &str, remote: &str) -> anyhow::Result<String> {
-    let current_branch = match GIT(&["rev-parse", "--abbrev-ref", "HEAD"]) {
-        Ok(current_branch) => current_branch,
-        Err(err) => {
-            clean_up_remote(remote, branch)?;
-            return Err(anyhow!(
-                "Couldn't get the current branch. This usually happens \
-                when the current branch does not have any commits.\n{err}"
-            ));
-        }
+    let current_branch = GIT(&["rev-parse", "--abbrev-ref", "HEAD"]).or_else(|err| {
+        clean_up_remote(remote, branch)?;
+        Err(anyhow!(
+            "Couldn't get the current branch. This usually happens \
+            when the current branch does not have any commits.\n{err}"
+        ))
+    })?;
+
+    if let Err(err) = GIT(&["checkout", branch]) {
+        clean_up_remote(remote, branch)?;
+        return Err(anyhow!(
+            "Could not checkout branch: {branch}, which belongs to remote {remote}\n{err}"
+        ));
     };
 
-    match GIT(&["checkout", branch]) {
-        Ok(_) => Ok(current_branch),
-        Err(err) => {
-            clean_up_remote(remote, branch)?;
-            Err(anyhow::anyhow!(
-                "Could not checkout branch: {branch}, which belongs to remote {remote}\n{err}"
-            ))
-        }
-    }
+    Ok(current_branch)
 }
 
 pub fn merge_into_main(
@@ -169,22 +166,21 @@ pub fn merge_into_main(
     remote_branch: &str,
 ) -> anyhow::Result<String, anyhow::Error> {
     trace!("Merging branch {local_branch}");
-    match GIT(&["merge", "--squash", local_branch]) {
-        Ok(_) => {
-            // --squash will NOT commit anything. So we need to make it manually
-            GIT(&[
-                "commit",
-                "--message",
-                &format!("patchy: Merge {local_branch}",),
-            ])?;
-            Ok(format!("Merged {remote_branch} successfully"))
-        }
-        Err(err) => {
-            // nukes the worktree
-            GIT(&["reset", "--hard"])?;
-            Err(anyhow!("Could not merge {remote_branch}\n{err}"))
-        }
-    }
+
+    if let Err(err) = GIT(&["merge", "--squash", local_branch]) {
+        // nukes the worktree
+        GIT(&["reset", "--hard"])?;
+        return Err(anyhow!("Could not merge {remote_branch}\n{err}"));
+    };
+
+    // --squash will NOT commit anything. So we need to make it manually
+    GIT(&[
+        "commit",
+        "--message",
+        &format!("patchy: Merge {local_branch}",),
+    ])?;
+
+    Ok(format!("Merged {remote_branch} successfully"))
 }
 
 pub async fn merge_pull_request(
@@ -193,10 +189,11 @@ pub async fn merge_pull_request(
     pr_title: &str,
     pr_url: &str,
 ) -> anyhow::Result<()> {
-    if let Err(err) = merge_into_main(
+    merge_into_main(
         &info.branch.local_branch_name,
         &info.branch.upstream_branch_name,
-    ) {
+    )
+    .map_err(|err| {
         let pr = display_link(
             &format!(
                 "{}{}{}{}",
@@ -214,7 +211,7 @@ pub async fn merge_pull_request(
         )
         .bright_blue();
 
-        return Err(anyhow!(
+        anyhow!(
             "Could not merge branch {} into the current branch for pull request {pr} \
             since the merge is non-trivial.\nYou will need to merge it yourself:\n  {} \
             {0}\nNote: To learn how to merge only once and re-use for subsequent \
@@ -222,8 +219,8 @@ pub async fn merge_pull_request(
              message from git:\n{err}",
             &info.branch.local_branch_name.bright_cyan(),
             "git merge --squash".bright_blue()
-        ));
-    }
+        )
+    })?;
 
     let has_unstaged_changes = GIT(&["diff", "--cached", "--quiet"]).is_err();
 
@@ -269,21 +266,22 @@ enum AvailableBranch {
 /// We also don't want to ask for a prompt for a custom name, as it would be pretty annoying to specify a name for each branch if you have like 30 pull requests you want to merge
 fn first_available_branch(branch: &str) -> AvailableBranch {
     let branch_exists = GIT(&["rev-parse", "--verify", branch]).is_err();
+
     if branch_exists {
-        AvailableBranch::First
-    } else {
-        // the first number for which the branch does not exist
-        let number = (2..)
-            .find(|current| {
-                let branch_with_num = format!("{}-{branch}", current);
-                GIT(&["rev-parse", "--verify", &branch_with_num]).is_err()
-            })
-            .expect("There will eventually be a #-branch which is available.");
-
-        let branch_name = format!("{number}-{branch}");
-
-        AvailableBranch::Other(branch_name)
+        return AvailableBranch::First;
     }
+
+    // the first number for which the branch does not exist
+    let number = (2..)
+        .find(|current| {
+            let branch_with_num = format!("{}-{branch}", current);
+            GIT(&["rev-parse", "--verify", &branch_with_num]).is_err()
+        })
+        .expect("There will eventually be a #-branch which is available.");
+
+    let branch_name = format!("{number}-{branch}");
+
+    AvailableBranch::Other(branch_name)
 }
 
 pub async fn fetch_pull_request(
@@ -295,14 +293,9 @@ pub async fn fetch_pull_request(
 ) -> anyhow::Result<(GitHubResponse, BranchAndRemote)> {
     let url = format!("https://api.github.com/repos/{}/pulls/{pull_request}", repo);
 
-    let response = match make_request(client, &url).await {
-        Ok(res) => res,
-        Err(res) => {
-            return Err(anyhow!(
-                "Could not fetch pull request #{pull_request}\n{res}\n"
-            ))
-        }
-    };
+    let response = make_request(client, &url)
+        .await
+        .map_err(|err| anyhow!("Could not fetch pull request #{pull_request}\n{err}\n"))?;
 
     let info = BranchAndRemote {
         branch: Branch {
@@ -326,11 +319,9 @@ pub async fn fetch_pull_request(
         },
     };
 
-    if let Err(err) = add_remote_branch(&info, commit_hash) {
-        return Err(anyhow!(
-            "Could not add remote branch for pull request #{pull_request}, skipping.\n{err}"
-        ));
-    };
+    add_remote_branch(&info, commit_hash).map_err(|err| {
+        anyhow!("Could not add remote branch for pull request #{pull_request}, skipping.\n{err}")
+    })?;
 
     Ok((response, info))
 }
