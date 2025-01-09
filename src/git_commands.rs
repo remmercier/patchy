@@ -81,68 +81,64 @@ pub fn add_remote_branch(
     info: &BranchAndRemote,
     commit_hash: &Option<String>,
 ) -> anyhow::Result<()> {
-    match GIT(&[
+    if let Err(err) = GIT(&[
         "remote",
         "add",
         &info.remote.local_remote_alias,
         &info.remote.repository_url,
     ]) {
-        Ok(_) => {
-            trace!(
-                "Added remote {} for repository {}",
-                &info.remote.repository_url,
-                &info.remote.local_remote_alias
-            );
-
-            match GIT(&[
-                "fetch",
-                &info.remote.repository_url,
-                &format!(
-                    "{}:{}",
-                    info.branch.upstream_branch_name, info.branch.local_branch_name
-                ),
-            ]) {
-                Ok(_) => {
-                    trace!(
-                        "Fetched branch {} as {} from repository {}",
-                        info.branch.upstream_branch_name,
-                        info.branch.local_branch_name,
-                        &info.remote.repository_url
-                    );
-
-                    if let Some(commit_hash) = commit_hash {
-                        GIT(&[
-                            "branch",
-                            "--force",
-                            &info.branch.local_branch_name,
-                            commit_hash,
-                        ])
-                        .map_err(|err| {
-                            anyhow!(
-                                "We couldn't find commit {} \
-                                of branch {}. Are you sure it exists?\n{err}",
-                                commit_hash,
-                                info.branch.local_branch_name
-                            )
-                        })?;
-
-                        trace!("...and did a hard reset to commit {commit_hash}",);
-                    };
-                    Ok(())
-                }
-                Err(err) => Err(anyhow!(
-                    "We couldn't find branch {} of GitHub repository {}. Are you sure it \
-                     exists?\n{err}",
-                    info.branch.upstream_branch_name,
-                    info.remote.repository_url
-                )),
-            }
-        }
-        Err(err) => {
-            GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
-            Err(anyhow!("Could not fetch remote: {err}"))
-        }
+        GIT(&["remote", "remove", &info.remote.local_remote_alias])?;
+        return Err(anyhow!("Could not fetch remote: {err}"));
     }
+    trace!(
+        "Added remote {} for repository {}",
+        &info.remote.repository_url,
+        &info.remote.local_remote_alias
+    );
+
+    if let Err(err) = GIT(&[
+        "fetch",
+        &info.remote.repository_url,
+        &format!(
+            "{}:{}",
+            info.branch.upstream_branch_name, info.branch.local_branch_name
+        ),
+    ]) {
+        return Err(anyhow!(
+            "We couldn't find branch {} of GitHub repository {}. Are you sure it \
+                     exists?\n{err}",
+            info.branch.upstream_branch_name,
+            info.remote.repository_url
+        ));
+    }
+
+    trace!(
+        "Fetched branch {} as {} from repository {}",
+        info.branch.upstream_branch_name,
+        info.branch.local_branch_name,
+        &info.remote.repository_url
+    );
+
+    if let Some(commit_hash) = commit_hash {
+        GIT(&[
+            "branch",
+            "--force",
+            &info.branch.local_branch_name,
+            commit_hash,
+        ])
+        .map_err(|err| {
+            anyhow!(
+                "We couldn't find commit {} \
+                                of branch {}. Are you sure it exists?\n{err}",
+                commit_hash,
+                info.branch.local_branch_name
+            )
+        })?;
+
+        trace!("...and did a hard reset to commit {commit_hash}",);
+    };
+
+    Ok(())
 }
 
 pub fn checkout_from_remote(branch: &str, remote: &str) -> anyhow::Result<String> {

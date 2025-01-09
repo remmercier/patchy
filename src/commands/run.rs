@@ -81,9 +81,9 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
 
     trace!("Using configuration file {config_file_path:?}");
 
-    let config = toml::from_str::<Configuration>(&config_raw).context(format!(
-        "Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file"
-    ))?;
+    let config = toml::from_str::<Configuration>(&config_raw).map_err(|err| {
+        anyhow!("Could not parse `{CONFIG_ROOT}/{CONFIG_FILE}` configuration file:\n{err}")
+    })?;
 
     let (remote_branch, commit_hash) = parse_if_maybe_hash(&config.remote_branch, " @ ");
 
