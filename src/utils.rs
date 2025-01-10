@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use rand::Rng;
 use reqwest::{header::USER_AGENT, Client};
 
@@ -46,8 +46,9 @@ pub async fn make_request(client: &Client, url: &str) -> anyhow::Result<GitHubRe
         Ok(res) if res.status().is_success() => {
             let out = res.text().await?;
 
-            let response: GitHubResponse =
-                serde_json::from_str(&out).context(format!("Could not parse response.\n{out}"))?;
+            let response: GitHubResponse = serde_json::from_str(&out).map_err(|err| {
+                anyhow!("Could not parse response.\n{out}. Could not parse because: \n{err}")
+            })?;
 
             Ok(response)
         }

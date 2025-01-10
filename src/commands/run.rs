@@ -1,6 +1,6 @@
 use std::fs;
 
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use colored::Colorize;
 
 use crate::{
@@ -97,13 +97,16 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
         ));
     }
 
-    let config_files = fs::read_dir(&config_path).context(format!(
-        "Could not read files in directory {:?}",
-        &config_path
-    ))?;
+    let config_files = fs::read_dir(&config_path).map_err(|err| {
+        anyhow!(
+            "Could not read files in directory {:?}\n{err}",
+            &config_path
+        )
+    })?;
 
-    let backed_up_files = backup_files(config_files)
-        .context("Could not create backups for configuration files, aborting.")?;
+    let backed_up_files = backup_files(config_files).map_err(|err| {
+        anyhow!("Could not create backups for configuration files, aborting.\n{err}")
+    })?;
 
     let info = BranchAndRemote {
         branch: Branch {
@@ -192,7 +195,8 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
     };
 
     for (file_name, _file, contents) in backed_up_files.iter() {
-        restore_backup(file_name, contents).context("Could not restore backups")?;
+        restore_backup(file_name, contents)
+            .map_err(|err| anyhow!("Could not restore backups:\n{err}"))?;
 
         // apply patches if they exist
         if let Some(ref patches) = config.patches {
