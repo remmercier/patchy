@@ -1,5 +1,6 @@
-use crate::utils::display_link;
+use crate::{confirm_prompt, fail, utils::display_link};
 use colored::Colorize;
+use futures::future::UnitError;
 use std::{
     path::{Path, PathBuf},
     process::Output,
@@ -56,8 +57,13 @@ pub fn get_git_root() -> anyhow::Result<PathBuf> {
     get_git_output(root, &args).map(|output| output.into())
 }
 
-pub static GIT_ROOT: Lazy<PathBuf> =
-    Lazy::new(|| get_git_root().expect("Failed to determine Git root directory"));
+pub static GIT_ROOT: Lazy<PathBuf> = Lazy::new(|| match get_git_root() {
+    Ok(root) => root,
+    Err(err) => {
+        fail!("Failed to determine Git root directory.\n{err}");
+        std::process::exit(1)
+    }
+});
 
 type Git = Lazy<Box<dyn Fn(&[&str]) -> Result<String> + Send + Sync>>;
 
