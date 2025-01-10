@@ -1,8 +1,8 @@
 # Patchy v1.2.7
 
 - Improved error message
-- Crate subdirectories if they do not exist
-- (?) Fix issue where directory already existed
+- Create sub-directories if they do not exist
+- Fix issue where we tried to create directory when it already existed, so it would abort the entire program
 
 # Patchy v1.2.6
 
