@@ -1,6 +1,5 @@
-use crate::{confirm_prompt, fail, utils::display_link};
+use crate::{fail, utils::display_link};
 use colored::Colorize;
-use futures::future::UnitError;
 use std::{
     path::{Path, PathBuf},
     process::Output,
