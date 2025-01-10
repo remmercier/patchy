@@ -183,7 +183,7 @@ pub async fn run(args: &CommandArgs) -> anyhow::Result<()> {
         }
     }
 
-    if let Err(err) = fs::create_dir(GIT_ROOT.join(CONFIG_ROOT)) {
+    if let Err(err) = fs::create_dir_all(GIT_ROOT.join(CONFIG_ROOT)) {
         GIT(&["checkout", &previous_branch])?;
 
         clean_up_remote(
