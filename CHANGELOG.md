@@ -1,3 +1,7 @@
+# Patchy v1.2.6
+
+- Improved error messages
+
 # Patchy v1.2.2 - v1.2.5
 
 - Fixes download links as github username of author changed
