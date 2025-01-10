@@ -25,13 +25,13 @@
 
 Go to a git repo, and initialize the config file:
 
-```sh
+```bash
 patchy init
 ```
 
 Invoke `patchy` by running the following command:
 
-```sh
+```bash
 patchy run
 ```
 
@@ -83,14 +83,14 @@ You might want to apply some changes to your repo, but it's not a pull request. 
 
 Create a patch from a commit:
 
-```sh
+```bash
 # obtain commit hashes e.g. from `git log`
 patchy gen-patch <hash-of-commit>
 ```
 
 For example, I'm running:
 
-```sh
+```bash
 patchy gen-patch 7bb8ec5a77769d88855d41dd5fecfaece54cf471
 ```
 
@@ -230,7 +230,7 @@ Fixing merge conflicts and retaining the fixes, declaratively
 
 Okay, now merge the branch:
 
-```sh
+```bash
 git merge --squash 11164/command-expansion
 ```
 
