@@ -1,3 +1,9 @@
+# Patchy v1.2.7
+
+- Improved error message
+- Crate subdirectories if they do not exist
+- (?) Fix issue where directory already existed
+
 # Patchy v1.2.6
 
 - Improved error messages
